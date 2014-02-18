@@ -29,7 +29,7 @@ SPIKE_THRESH_ECOG = 1;
 SPIKE_THRESH_LFP = 1;
 SPIKE_THRESH_MUA = NaN; % will need to test this
 MIN_REFRACT = 1;
-run('../get_gmf_env'); 
+get_gmf_env();
 
 % add paths:
 addpath(genpath(PP_TOOLS));
