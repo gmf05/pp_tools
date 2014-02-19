@@ -478,17 +478,10 @@ classdef pp_model
     function plot(obj, d, p)
       
       global PLOT_COLOR;      
+      global DO_CONF_INT;
+      global DO_MASK;
       
-      if isempty(obj.W)
-        DO_CONF_INT = false;
-        DO_MASK = false;
-      else
-        DO_CONF_INT = true;
-        DO_MASK = true;
-        Z = 2;
-      end
-      DO_MASK = false;
-      
+      Z = 2;
       N_covar_types = length(p.covariate_names);
       burn_in = p.get_burn_in();
       % NOTE: ASSUMES 'rate' is first covariate
