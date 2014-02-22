@@ -65,9 +65,11 @@ protocol = 'prot1';
 DO_CONF_INT = false;
 
 % inhibitory cells
-dispCells = { ...
-  '5-28-13', 2, 5; '6-13-13', 1, 5; '6-14-13', 2, 6; '7-23-13', 2, 2; ...
-  '7-23-13', 2, 2};
+% dispCells = { ...
+%   '5-28-13', 2, 5; '6-13-13', 1, 5; '6-14-13', 2, 6; '7-23-13', 2, 2; ...
+%   '7-23-13', 2, 2};
+dispCells = inh_cell_list_mod;
+
 
 % noise-sensitive cells (all)
 % dispCells = { ...
@@ -150,21 +152,23 @@ for i = 1:size(dispCells,1)
 %   s = Session(protocol,date,ind); d = s.PPData;
 %   filename = [d.Name '_c' num2str(response)]
   filename = [date '-prot1-' num2str(ind) '_pp_c' num2str(response)];
-  load(filename);
-  d = pp_data([],(1:length(m.y))*dt);
-  p0 = p;
-  p0.covariate_names = p0.covariate_names(1:3);
-  p0.covariate_channels = p0.covariate_channels(1:3);
-  p0.covariate_knots = p0.covariate_knots(1:3);
-  p0.covariate_bases = p0.covariate_bases(1:3);
-  p0.covariate_ind = p0.covariate_ind(1:3);
-  if m.KS(1)<0.1
-    m.plot(d,p0);
-%     cov_ellipse(m,p);
-  else
-    fprintf(['Bad model - ' date '_c' num2str(response) '\n']);
+  try
+    load(filename);
+    d = pp_data([],(1:length(m.y))*dt);
+    p0 = p;
+    p0.covariate_names = p0.covariate_names(1:3);
+    p0.covariate_channels = p0.covariate_channels(1:3);
+    p0.covariate_knots = p0.covariate_knots(1:3);
+    p0.covariate_bases = p0.covariate_bases(1:3);
+    p0.covariate_ind = p0.covariate_ind(1:3);
+    if m.KS(1)<0.1
+      m.plot(d,p0);
+  %     cov_ellipse(m,p);
+    else
+      fprintf(['Bad model - ' date '_c' num2str(response) '\n']);
+    end;
+    for n = 1:N_plots, subplot(N_plots,1,n), hold on; end;
   end
-  for n = 1:N_plots, subplot(N_plots,1,n), hold on; end;
 end
   
 

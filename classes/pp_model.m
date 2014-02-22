@@ -99,7 +99,7 @@ classdef pp_model
           obj.CIF = glmval(b,obj.X,obj.link,'constant','off');
           obj.dev = dev;
           obj.stats=stats;         
-        
+        h
         case 'filt'                    
           % initialize arrays
           NT = length(burn_in:p.downsample_est:d.T);
