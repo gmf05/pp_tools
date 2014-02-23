@@ -151,7 +151,6 @@ classdef pp_data
           colorbar();
         case 'raster'          
           for i = 1:obj.N_channels
-            obj.t(1)
             plot(obj.t,obj.dn(i,:)+i-1,PLOT_COLOR); hold on;
           end
           xlabel('time [s]','fontsize',FONT_SIZE);
