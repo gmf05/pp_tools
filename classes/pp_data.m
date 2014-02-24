@@ -95,17 +95,20 @@ classdef pp_data
       ttl = regexprep(obj.Name,'_',' ');
       ttl = regexprep(ttl, ' pp thresh', '');
       
+      win_rate = zeros(obj.N_channels,N_windows);
       switch plot_type
         case 'rate'
-          win_rate = zeros(1,N_windows);
+%           win_rate = zeros(1,N_windows);
           for i = 1:obj.N_channels
             count = 1;
             for n = 1:N_windows
-              win_rate(n) = sum(obj.dn(i,count:count+win_bins-1));
+              win_rate(i,n) = sum(obj.dn(i,count:count+win_bins-1));
               count = count+dW_bins;
             end
             plot(tmins,win_rate,PLOT_COLOR); hold on; grid on;
+            
           end
+          save mg49_rate win_rate
           xlabel('time [s]')
           ylabel('rate [Hz]')
           title({ttl; plot_type});

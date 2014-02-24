@@ -5,8 +5,8 @@ N_cov = p.covariate_ind{end}(end);
 % 4-5 = noise
 % 6-8 = laser
 % 9-10 = interact
-ind = [p.covariate_ind{4} p.covariate_ind{6}];
-
+ind = [p.covariate_ind{3}(2) p.covariate_ind{4}(2)];
+% ind = [p.covariate_ind{3} p.covariate_ind{4}];
 
 % circle used to make ellipse
 theta = 0:0.01:2*pi;
@@ -33,6 +33,10 @@ end
 
 plot(b_hat(1), b_hat(2), 'rx', 'MarkerSize', 10, 'LineWidth',4); hold on
 plot(c_ellipse(1,:), c_ellipse(2,:),'LineWidth',4);
+
+% plot(exp(b_hat(1)), exp(b_hat(2)), 'rx', 'MarkerSize', 10, 'LineWidth',4); hold on
+% plot(exp(c_ellipse(1,:)), exp(c_ellipse(2,:)),'LineWidth',4);
+
 update_fig();
 
 end
