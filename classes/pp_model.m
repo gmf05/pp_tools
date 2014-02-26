@@ -550,7 +550,7 @@ classdef pp_model
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
-                  plot(lag_axis,exp(Y'),'Color',PLOT_COLOR,'linewidth',2);
+                  plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
                 end
               case 'indicator'
                 lag_axis = p.covariate_knots{covar_num};
@@ -561,7 +561,7 @@ classdef pp_model
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
-                  plot(lag_axis,exp(obj.b(ind)'),'Color',PLOT_COLOR,'linewidth',2);                  
+                  plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
             end
             xlabel('lag time [ms]');
