@@ -3,22 +3,22 @@ function XI = xi(ms,d,lag)
 
   cifs = zeros(d.N_channels,length(ms{1}.CIF));
   for i = 1:length(ms)
-    if ~isempty(ms{i}.CIF)
+    if ~isempty(ms{i}) && ~isempty(ms{i}.CIF)
       cifs(i,:) = ms{i}.CIF;
-    else
-      
     end
   end
   
-  XI = zeros(d.N_channels);
+  XI = ones(d.N_channels);
   
   if lag==0
     for i = 1:d.N_channels
       for j = i+1:d.N_channels
         [i,j]
-%         XI(i,j) = dot(d.dn(i,:),d.dn(j,:)) / dot(cifs(i,:),cifs(j,:));
-%         XI(i,j) = (d.dn(i,:)*d.dn(j,:)') / (cifs(i,:)*cifs(j,:)');
-        XI(i,j) = sum(d.dn(i,:).*d.dn(j,:)) / sum(cifs(i,:).*cifs(j,:));
+        numer = sum(d.dn(i,:).*d.dn(j,:));
+        denom = sum(cifs(i,:).*cifs(j,:));
+        if denom>0
+          XI(i,j) = sum(d.dn(i,:).*d.dn(j,:)) / sum(cifs(i,:).*cifs(j,:));
+        end
       end
     end
     XI = XI + XI';
