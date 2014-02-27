@@ -92,13 +92,12 @@ classdef pp_model
 %           [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
           
           % custom glmfit routine:
-          [b,dev,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
+          [b,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
           
           obj.b = b;
           obj.W = stats.covb;
           obj.CIF = glmval(b,obj.X,obj.link,'constant','off');
-          obj.dev = dev;
-          obj.stats=stats;         
+          obj.stats=stats;
         
         case 'filt'                    
           % initialize arrays
@@ -263,8 +262,8 @@ classdef pp_model
             
       % goodness-of-fit measures:
       obj.LL = sum(log(poisspdf(obj.y,obj.CIF)));
-      obj.dev = dev;
-      obj.AIC = dev+2*length(b);
+      obj.dev = 2*(sum(log(poisspdf(obj.y,obj.y))) - obj.LL);
+      obj.AIC = obj.dev+2*length(b);
             
       % time rescaling & KS test
       spike_ind = find(obj.y);           
@@ -396,7 +395,7 @@ classdef pp_model
       end
     end
     
-    function [b,dev,stats] = glmfit0(obj, X, y_in, link)
+    function [b,stats] = glmfit0(obj, X, y_in, link)
       
       if size(y_in,2)>size(y_in,1), y = y_in';
       else y = y_in; end;
@@ -460,9 +459,6 @@ classdef pp_model
       % assumes normal dispersion (s=1):
       % C=C*s^2;
 
-      % deviance:
-      dev = 0;
-      
       stats.beta = b;
       stats.dfe = N-p;
       stats.sfit = [];
