@@ -48,8 +48,8 @@ p.noise = noise;
 p.downsample_est = 20;
 
 ms = cell(1,d.N_channels);
-% for response = 1:d.N_channels
-for response = 1
+for response = 1:d.N_channels
+% for response = 1
   response
   p.response = response;
   p.covariate_channels{2} = response;

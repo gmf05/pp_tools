@@ -1,10 +1,10 @@
 % no stimulus response
 % just Poisson + Intrinsic + Ensemble effects
-% 
+%
 
 date = '10-26-13';
 protocol = 'prot0';
-ind = 1;
+ind = 2;
 s = Session(protocol,date,ind);
 d = s.PPData;
 
@@ -36,17 +36,17 @@ p.fit_method = fit_method;
 p.noise = noise;
 p.downsample_est = 1000;
 
-% for response = 1:d.N_channels
-for response = 2
+for response = 1:d.N_channels
+% for response = 1
   p.response = response;
   p.covariate_channels{2} = response;
   p.covariate_channels{3} = [1:response-1 response+1:d.N_channels]; 
   m = pp_model();
-%   try 
+  try 
     m = m.fit(d,p);
-%     m.X = [];
-%     save([d.Name '_c' num2str(response) '.mat'], 'm', 'p'); clear m;
-%   catch
-%     eval(['!echo ' fpref num2str(response) ' >> badchannels']);
-%   end
+    m.X = [];
+    save([d.Name '_c' num2str(response) '.mat'], 'm'); clear m;
+  catch
+    eval(['!echo ' fpref num2str(response) ' >> badchannels']);
+  end
 end

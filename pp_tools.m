@@ -8,15 +8,11 @@ global PLOT_COLOR
 global FONT_SIZE
 global DO_SAVE
 global RESCALE_FUNC
-global DO_CONF_INT
-global DO_MASK
 
 PLOT_COLOR = 'b';
 FONT_SIZE = 18;
 DO_SAVE = true;
 RESCALE_FUNC = 'exp';
-DO_CONF_INT = true;
-DO_MASK = true;
 
 % MGH-specific global variables
 global DATA_DIR
@@ -29,7 +25,7 @@ SPIKE_THRESH_ECOG = 1;
 SPIKE_THRESH_LFP = 1;
 SPIKE_THRESH_MUA = NaN; % will need to test this
 MIN_REFRACT = 1;
-get_gmf_env();
+run('../get_gmf_env'); 
 
 % add paths:
 addpath(genpath(PP_TOOLS));
