@@ -25,9 +25,9 @@ SPIKE_THRESH_ECOG = 1;
 SPIKE_THRESH_LFP = 1;
 SPIKE_THRESH_MUA = NaN; % will need to test this
 MIN_REFRACT = 1;
-run('../get_gmf_env'); 
 
 % add paths:
+run('~/Code/matlab/get_gmf_env'); 
 addpath(genpath(PP_TOOLS));
 addpath(genpath(DATA_DIR));
 
