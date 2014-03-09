@@ -53,3 +53,13 @@ for i = 1:96
     ms_ens2{i,2}.AIC = ms_ens2{i,2}.dev + 2*length(ms_ens2{i,2}.b);
   end
 end
+
+
+%%
+lag = 45;
+for i = 1:96
+  x1 = d.dn(i,1:end-lag);
+  x2 = d.dn(i,lag+1:end);
+  ac = sum(x1.*x2)/sqrt(sum(x1)*sum(x2));
+  AC(i) = ac;
+end
