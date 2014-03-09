@@ -8,16 +8,16 @@ function XI = xi(ms,d,lag)
     end
   end
   
-  XI = ones(d.N_channels);
+  XI = zeros(d.N_channels);
   
   if lag==0
     for i = 1:d.N_channels
+      i
       for j = i+1:d.N_channels
-        [i,j]
         numer = sum(d.dn(i,:).*d.dn(j,:));
         denom = sum(cifs(i,:).*cifs(j,:));
         if denom>0
-          XI(i,j) = numer / denom;  
+          XI(i,j) = numer / denom;
         end
       end
     end
@@ -25,6 +25,7 @@ function XI = xi(ms,d,lag)
   
   else
     for i = 1:d.N_channels
+      i
       for j = 1:d.N_channels
         numer = sum(d.dn(i,lag+1:end).*d.dn(j,1:end-lag));
         denom = sum(cifs(i,lag+1:end).*cifs(j,1:end-lag));
@@ -35,4 +36,5 @@ function XI = xi(ms,d,lag)
     end
   end
   
+  XI(XI==0) = 1;
 end

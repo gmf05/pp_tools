@@ -64,7 +64,7 @@ classdef seizure
         data = make_seizure_pp(sz.ECoG,patient_name,seizure_name,'ECoG');
       else
         fprintf('Point process ECoG data found.\n');
-        load(pp_ecog_file(1).name);
+        	load(pp_ecog_file(1).name);
       end
       ecog.PPData = data; 
       

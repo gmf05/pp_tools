@@ -89,12 +89,14 @@ classdef patient
         y = ELEC_COORD(n,2);
         xs = [x-R/2 x-R/2 x+R/2 x+R/2];
         ys = [y-R/2 y+R/2 y+R/2 y-R/2];
-        fill(xs,ys,col);
+        fill(xs,ys,col); hold on;
+        text(10*n,10*n,num2str(n),'k','LineWidth',10,'fontsize',100);
       end
       
       set(gca,'YTick',[]); 
       set(gca,'XTick',[]);
-      update_fig();
+      
+%       update_fig();
       
     end
   end
