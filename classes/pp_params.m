@@ -134,7 +134,31 @@ classdef pp_params
             tmaxs = tmins+win_size;            
         end
         N_windows = length(tmins);
+    end   
+  
+  function Xs = splineX(obj,ind)
+    s = obj.s;
+    knots = obj.covariate_knots{ind};
+    N = length(knots);
+    s_coeff = [-s  2-s s-2  s; 2*s s-3 3-2*s -s; ...
+           -s   0   s   0;   0   1   0   0];
+    tau = knots(1):knots(end);
+    NT = length(tau);
+    intvls = diff(knots);
+    Xs = zeros(NT,N+2);
+
+    count=1;
+    for n=1:N-1
+      I = intvls(n); % length of interval (num. of bins)
+      alphas = (0:I-1)./I;
+      Xs(count:count+I-1, n+(0:3)) = [alphas'.^3 alphas'.^2 alphas' ones(I,1)] * s_coeff;
+        count = count+I;
     end
-  end   
- 
+    Xs(end, N-1:N+2) = [1 1 1 1] * s_coeff; % alpha = 1
+  end
+  
+  end
+  
 end
+
+
