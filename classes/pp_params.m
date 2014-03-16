@@ -84,8 +84,9 @@ classdef pp_params
       end
     end
 
-    function Xs = splineX(obj, i)
-      
+    function Xs = spline_Xi(obj, i)
+      % i : covariate index -- makes a block of the spline matrix
+      % like make_X_block
       knots = obj.covariate_knots{i};
       s = obj.s;
       

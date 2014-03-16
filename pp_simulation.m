@@ -67,8 +67,8 @@ T_b = log(30*d.dt);
 % express delays as [knot,b] combos
 R_knots = [1 5 10 15];
 R_b = cell(1,N_nodes-1);
-R_b{1} = [-10 -3 0 1 0 0]';
-R_b{2} = [-10 -3 0 0 1 0]';
+R_b{1} = [-10 -1 0 0.2 0 0]';
+R_b{2} = [-10 -1 0 0 0.2 0]';
 
 % declare parameters
 p_est = pp_params();
@@ -76,17 +76,17 @@ p_est = p_est.add_covar('rate',0,T_knots,'indicator'); % flat baseline rate
 ps = cell(1,N_nodes);
 ps{1} = p_est;
 for n = 1:N_nodes-1
-  ps{n+1} = ps{n}; ps{n+1}.response = n;
-  ps{n+1} = ps{n}.add_covar('ens',n,R_knots,'spline');
+  ps{n+1} = ps{n}; ps{n+1}.response = n+1;
+  ps{n+1} = ps{n+1}.add_covar('ens',n,R_knots,'spline');
 end
 
 % plot pair (later, sequence) of delay effect curves
 for n = 1:N_nodes-1
-  subplot(N_nodes,1,n+1);
+  subplot(N_nodes-1,1,n);
   [t,y] = plot_spline(R_knots,R_b{n});
   plot(t,y); hold on;
 end
-
+%%
 % simulate data
 % sim_dn = zeros(d.N_channels,d.T);
 sim_dn = zeros(N_nodes,d.T);
@@ -101,7 +101,7 @@ m_true = pp_model();
 for n = 2:N_nodes
   b = [T_b; reshape([R_b{1:n-1}],[],1)];
   m_true = m_true.make_X(sd,ps{n});
-  sim_dn(n+1,:) = poissrnd(exp(m_true.X*b));
+  sim_dn(n,:) = poissrnd(exp(m_true.X*b));
   sd.dn = sim_dn;
 end
 sd = pp_data(sim_dn,d.t);
@@ -113,7 +113,7 @@ for n = 2:N_nodes
   R_b_est = m_est.b(ps{n}.covariate_ind{n});
   % compare estimate to ground truth
   [t,yhat] = plot_spline(R_knots,R_b_est);
-  subplot(N_nodes-1,1,n-1), plot(t,yhat,'r');
+  subplot(N_nodes-1,1,n-1), hold on, plot(t,yhat,'r');
 end
 
 %% rhythmic (AR) network
@@ -158,7 +158,6 @@ sim_dn(1,1:burn_in) = poissrnd(exp(T_b),[1,burn_in]);
 
 for t = burn_in+1:d.T
 % % %   X = m_tru e.X(t,:); % this needs to be updated
-
   % use spike history to create X
   dn_T = sim_dn(response,t-[Q_knots(1):Q_knots(end)]);
   Xt = [1 dn_T*Xs];
@@ -178,14 +177,15 @@ Q_b_est = m_est.b(p_est.covariate_ind{2});
 hold on; plot(t,yhat,'r');
 
 %% compute some cross-correlations for simulated data
-figure
-N=1;
+% figure
+N=2;
 N_lags=100;
 % all_xc = zeros(N,2*N_lags+1);
 for n = 1:N
-  [xc,l] = xcorr(sd.dn(n,:),sd.dn(n+1,:),N_lags,'coeff');
+  col = 'b'; shift = 1;
+  [xc,l] = xcorr(sd.dn(n,:),sd.dn(n+shift,:),N_lags,'coeff');
 %   all_xc(n,:) = xc;
-  subplot(N,1,n), plot(l,xc);
+  subplot(N,1,n), hold on; plot(l,xc,col);
 end
 %% compute auto-correlations
 N=2;
