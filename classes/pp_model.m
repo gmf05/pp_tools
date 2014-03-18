@@ -85,15 +85,14 @@ classdef pp_model
       obj.y = obj.y(burn_in+1:end);            
       
       fprintf(['Estimating parameters...\n']);
+%       % MATLAB glmfit routine:
+%       [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
+
+      % custom glmfit routine:
+      [b,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
+
       switch obj.fit_method
         case 'glmfit'
-          
-          % MATLAB glmfit routine:
-%           [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
-          
-          % custom glmfit routine:
-          [b,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
-          
           obj.b = b;
           obj.W = stats.covb;
           obj.CIF = glmval(b,obj.X,obj.link,'constant','off');
@@ -108,10 +107,8 @@ classdef pp_model
           X_bwd = flipud(obj.X);
           y_bwd = fliplr(obj.y);
 %           [b_bwd,~,stats_bwd] = glmfit(X_bwd,y_bwd,'poisson','link',obj.link,'constant','off');
-          [b_bwd,~,stats_bwd] = obj.glmfit0(X_bwd,y_bwd,obj.link);
+          [b_bwd,stats_bwd] = obj.glmfit0(X_bwd,y_bwd,obj.link);
           W_bwd = stats_bwd.covb;
-          dev = [];
-          stats = [];
           
           % noise (Kalman gain) matrix:
           noise_mtx = zeros(N_cov);
@@ -136,7 +133,8 @@ classdef pp_model
             dB = W_bwd(fs_update_ind,fs_update_ind)*dL_dB'*(obj.y(t) - lt);
             b_bwd(fs_update_ind) = b_bwd(fs_update_ind) + dB;
           end
-          b = b_bwd; W = W_bwd;
+%           b = b_bwd;
+          W = W_bwd;
           fprintf(['Done!\n']);
           
           % set initial values          
@@ -180,10 +178,8 @@ classdef pp_model
           obj.CIF = zeros(d.T - burn_in, 1);
           X_bwd = flipud(obj.X);
           y_bwd = fliplr(obj.y);
-          [b_bwd,~,stats_bwd] = glmfit(X_bwd,y_bwd,'poisson','constant','off');
+          [b_bwd,stats_bwd] = glmfit0(X_bwd,y_bwd,'poisson','constant','off');
           W_bwd = stats_bwd.covb;
-          dev = [];
-          stats = [];
           
           % noise (Kalman gain) matrix:
           noise_mtx = zeros(N_cov);
