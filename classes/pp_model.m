@@ -1,5 +1,5 @@
 classdef pp_model
-%      
+%
 %   properties
 %     b % parameters (column vector)
 %     W % covariance matrix
@@ -71,7 +71,7 @@ classdef pp_model
       N_cov_types = length(p.covariate_names);
       obj.y = d.dn(p.response,:)'; % response variable      
       
-      % make design matrix
+      % make design matrixglmf
       N_cov = p.covariate_ind{end}(end); % total # of covariates
       fs_update_ind = p.covariate_ind{1}+1:N_cov;
       obj.X = ones(d.T,N_cov);
@@ -169,7 +169,7 @@ classdef pp_model
           obj.b = bs;
           obj.W = Ws;
           
-        case 'smooth'          
+        case 'smooth'
           bs = cell(1,d.T-burn_in);
           Ws = cell(1,d.T-burn_in);
           NT = length(burn_in:p.downsample_est:d.T);
@@ -178,7 +178,7 @@ classdef pp_model
           obj.CIF = zeros(d.T - burn_in, 1);
           X_bwd = flipud(obj.X);
           y_bwd = fliplr(obj.y);
-          [b_bwd,stats_bwd] = glmfit0(X_bwd,y_bwd,'poisson','constant','off');
+          [b_bwd,stats_bwd] = obj.glmfit0(X_bwd,y_bwd,obj.link);
           W_bwd = stats_bwd.covb;
           
           % noise (Kalman gain) matrix:
