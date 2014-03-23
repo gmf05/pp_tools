@@ -3,6 +3,7 @@ classdef Neuroport
     patient
     N_electrodes
     coord
+    arrayMap
     Ws
     color
   end
@@ -21,6 +22,7 @@ classdef Neuroport
     for n = 1:96;
       arrayMap(num(n,1)+1,num(n,2)+1) = n;
     end
+    obj.arrayMap = arrayMap;
     
     % set coordinates
     coord = zeros(obj.N_electrodes,2);
@@ -85,7 +87,7 @@ classdef Neuroport
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
         text(x,y,num2str(n),'fontsize',22);
       end
-      axis ij;
+      axis xy;
       title(num2str(t));
       pause(0.005);
       hold off;
