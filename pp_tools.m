@@ -29,9 +29,10 @@ SPIKE_THRESH_ECOG = 1;
 SPIKE_THRESH_LFP = 1;
 SPIKE_THRESH_MUA = NaN; % will need to test this
 MIN_REFRACT = 1;
-get_gmf_env();
 
 % add paths:
+PP_TOOLS = pwd();
+DATA_DIR = '/projectnb/ecog/Data'; % SCC
 addpath(genpath(PP_TOOLS));
 addpath(genpath(DATA_DIR));
 

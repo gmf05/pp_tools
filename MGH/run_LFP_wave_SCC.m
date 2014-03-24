@@ -1,75 +1,28 @@
+%--- get data
 % pp_tools;
 sz = seizure('MG49','Seizure45');
 d = sz.LFP.PPData;
-% patient = 'MG49'; seizure = 'Seizure45'; 
-% load([DATA_DIR '/' patient '/' patient '_' seizure '_LFP_pp_thresh1']); d = data; clear data
-% d = sz.LFP.PPData;
-% d = d.downsample(32);
+N = Neuroport(sz.Patient);
+
+%--- set some parameters
 p = pp_params();
-
-response = 44;
-% response = 46;
-p.response = response;
-
 T_knots = [0 1];
 p = p.add_covar('rate', 0, T_knots, 'indicator');
-
 Q_knots = [1 21:20:101 151:50:501 1001];
-p = p.add_covar('self-hist', response, Q_knots, 'spline');
-
-% R_knots = [1 21:20:101 151:50:501];
-% p = p.add_covar('ensemble', [1:response-1, response+1:d.N_channels], R_knots, 'spline');
-
-% plane wave dynamics
-R_knots = [0];
-p = p.add_covar('ensemble1', [42], R_knots, 'indicator');
-p = p.add_covar('ensemble2', [43], R_knots, 'indicator');
-p = p.add_covar('ensemble3', [46], R_knots, 'indicator');
-p = p.add_covar('ensemble4', [51], R_knots, 'indicator');
-
-% p = p.add_covar('ensemble1', [50], R_knots, 'indicator');
-% p = p.add_covar('ensemble2', [44], R_knots, 'indicator');
-% p = p.add_covar('ensemble3', [52], R_knots, 'indicator');
-% p = p.add_covar('ensemble4', [56], R_knots, 'indicator');
-
-
-
-fit_method = 'glmfit'; noise = [];
-% fit_method = 'filt';
-% fit_method = 'smooth';
-% noise = [0 1e-6 1e-7]; % gives 10Hz recruitment sig in c1
-% noise = [0 1e-6 1e-8]; % 
-% noise = [0 1e-6 1e-10]; % previously optimized (needs to be repeated)
-
-p.fit_method = fit_method;
-p.noise = noise;
-p.downsample_est = 200;
-
-m = pp_model();
-
-bs = cell(1, d.N_channels);
-% for response = 1:d.N_channels
-for response = response
-%   response
-%   p.response = response; p.covariate_channels{2} = response;
-%   p.covariate_channels{3} = [1:response-1, response+1:d.N_channels];  
-  m = m.fit(d,p);
-  m
-% %   m.plot(d,p);  
-end
-
-%% 
-
-N = Neuroport('MG49');
+p = p.add_covar('self-hist', -1, Q_knots, 'spline');
 % response_list = [12 27 33 70 31 91 76 49];
-response_list = [12 27 33 70];
+% response_list = [13 23 20 19 25 27 54 21 29]; %group 1: upper right 3x3
+response_list = [68 35 36 70 37 38 39 40 76 45 47 78 82 49 80 84 86 74 41 43];
 N_response = length(response_list);
 N_covar1 = p.covariate_ind{2}(end);
+
+%---initialize arrays
+m = pp_model();
 X = zeros(N_response*d.T,N_response*N_covar1+4);
 y = zeros(N_response*d.T,1);
 
 for r = 1:N_response
-  
+
   response = response_list(r);
   p = pp_params();
   p.response = response;
@@ -77,20 +30,20 @@ for r = 1:N_response
   p = p.add_covar('rate', 0, T_knots, 'indicator');
   Q_knots = [1 21:20:101 151:50:501 1001];
   p = p.add_covar('self-hist', response, Q_knots, 'spline');
-  
-  % plane wave dynamics
+
+  %--- plane wave dynamics
   R_knots = [0];
-  x = N.coord(response,1);
-  y = N.coord(response,2);
-  e_up = N.arrayMap(x,y+1);
-  e_down = N.arrayMap(x,y-1);
-  e_left = N.arrayMap(x-1,y);
-  e_right = N.arrayMap(x+1,y);
+  x0 = N.coord(response,1);
+  y0 = N.coord(response,2);
+  e_up = N.arrayMap(x0,y0+1);
+  e_down = N.arrayMap(x0,y0-1);
+  e_left = N.arrayMap(x0-1,y0);
+  e_right = N.arrayMap(x0+1,y0);
   p = p.add_covar('ensemble1', [e_up], R_knots, 'indicator');
   p = p.add_covar('ensemble2', [e_down], R_knots, 'indicator');
   p = p.add_covar('ensemble3', [e_left], R_knots, 'indicator');
   p = p.add_covar('ensemble4', [e_right], R_knots, 'indicator');
-  
+
   fit_method = 'glmfit'; noise = [];
   % fit_method = 'filt';
   % fit_method = 'smooth';
@@ -101,8 +54,8 @@ for r = 1:N_response
   p.noise = noise;
   p.downsample_est = 200;
 
-  p
-  m = m.fit(d,p); m
+%   m = m.make_X(d,p);
+  m = m.fit(d,p);
   X((r-1)*d.T+(p.get_burn_in()+1:d.T),(r-1)*N_covar1+(1:N_covar1)) = m.X(:,1:N_covar1);
   X((r-1)*d.T+(p.get_burn_in()+1:d.T),end-3:end) = m.X(:,N_covar1+(1:4));
     X((r-1)*d.T+(1:p.get_burn_in()),(r-1)*N_covar1+1) = 1; % patch rate
@@ -110,10 +63,13 @@ for r = 1:N_response
   
 end
 
-%%
+%
+temp = tic();
 [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+run_time = toc(temp);
 b
-%%
+run_time
+
 cif = glmval(b,X,'log','constant','off');
 LL = sum(log(poisspdf(y,cif)));
 % time rescaling & KS test
@@ -153,7 +109,11 @@ end
 ks_stat
 
 
-%%
+%% save
+
+file_name = 'MG49_S45_wavemodel_1';
+save(file_name,'b','p','cif','LL','z','ks_stat','ks_ci','stats','run_time','response_list');
+
 
 %% plot results
 
@@ -173,6 +133,17 @@ for i = 1:4
   fill([x-D/2 x-D/2 x+D/2 x+D/2],[y-D/2 y+D/2 y+D/2 y-D/2],col); hold on;
 end
 
+%% plot AR curves
+
+Q = p.covariate_ind{2}(end);
+for r = 1:N_response
+  ind = (r-1)*Q + (2:Q);
+  [t,y] = plot_spline(Q_knots,b(ind));
+  plot(t,exp(y));
+  hold on;
+end
+  
+  
 %%
 
 X0 = zeros(2*d.T,18+22);
