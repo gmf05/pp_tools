@@ -129,7 +129,30 @@ classdef Neuroport
       plot([x x2],[y y2], 'b');
     end
       
+  end
+  
+  function plot_dir2(obj, dirv)
+    
+    obj.plot();
+    hold on;
+    for n = 1:obj.N_electrodes
+      x = obj.coord(n,1);
+      y = obj.coord(n,2);
+      
+      % polar coordinates
+%       x2 = x+dirv(n,1)*cos(dirv(n,2));
+%       y2 = y+dirv(n,1)*sin(dirv(n,2));
+
+      % cartesian coordinates (dx, dy)
+      dir_n = [0 1]*dirv(n,1) + [0 -1]*dirv(n,2) + [-1 0]*dirv(n,3) + [1 0]*dirv(n,4);
+      x2 = x + 10*dir_n(1);
+      y2 = y + 10*dir_n(2);
+      
+      plot([x x2],[y y2], 'b');
     end
+      
+  end
+    
     
   
   end
