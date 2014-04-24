@@ -25,11 +25,11 @@ p = p.add_covar('self-hist', response, Q_knots, 'spline');
 R_knots = [1 21:20:101 151:50:501];
 p = p.add_covar('ensemble', [1:response-1, response+1:d.N_channels], R_knots, 'spline');
 
-fit_method = 'glmfit'; noise = [];
-% fit_method = 'filt';
+% fit_method = 'glmfit'; noise = [];
+fit_method = 'filt';
 % fit_method = 'smooth';
 % noise = [0 1e-8 1e-10]; % small, seems to work well
-% noise = [0 1e-6 1e-8]; % small, seems to work well
+noise = [0 1e-6 1e-8]; % small, seems to work well
 % noise = [0 1e-8 1e-10];
 % noise = [0 1e-8 1e-10]; 
 p.fit_method = fit_method;

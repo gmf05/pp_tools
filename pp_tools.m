@@ -32,7 +32,8 @@ MIN_REFRACT = 1;
 
 % add paths:
 PP_TOOLS = pwd();
-DATA_DIR = '/projectnb/ecog/Data'; % SCC
+% DATA_DIR = '/projectnb/ecog/Data'; % SCC
+DATA_DIR = '/media/Shared/GMF/Documents/BostonU/Research/Data'; % SCC
 addpath(genpath(PP_TOOLS));
 addpath(genpath(DATA_DIR));
 

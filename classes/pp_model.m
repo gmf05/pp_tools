@@ -28,7 +28,7 @@ classdef pp_model
 %     m.plot(d,p)
 %     INPUT: point process data (d), parameters (p)
 %     Plots model estimates
-%     
+%     % p = p.add_covar('population', 2, [0], 'indicator');
 %     Xi = m.make_X(d, channels, basis, knots, p.s);
 %     INPUT: point process data (d), channels, basis,
 %            knots, tension parameter (s)
@@ -134,6 +134,7 @@ classdef pp_model
             b_bwd(fs_update_ind) = b_bwd(fs_update_ind) + dB;
           end
 %           b = b_bwd;
+%           b = rand(size(b));
           W = W_bwd;
           fprintf(['Done!\n']);
           
@@ -309,6 +310,7 @@ classdef pp_model
         Xi = obj.make_X_block(d, channels, basis, knots, p.s);
         obj.X(:,ind) = Xi; clear Xi;
       end
+%       obj.X = obj.X(p.get_burn_in()+1:end,:);
     end
     
     function Xi = make_X_block(obj, data, channels, basis, knots, s)
@@ -481,7 +483,7 @@ classdef pp_model
       % come afterwards
       
       % RATE----------------------
-      subplot(N_covar_types,1,1)
+      subplot(N_covar_types,1,1); hold on;
       T0 = length(p.covariate_knots{1});
       ind = p.covariate_ind{1};
       switch obj.fit_method
@@ -528,7 +530,7 @@ classdef pp_model
       
       % OTHER COVARIATES----------
       for covar_num = 2:N_covar_types        
-        subplot(N_covar_types,1,covar_num)
+        subplot(N_covar_types,1,covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
           case 'glmfit'
@@ -657,14 +659,14 @@ classdef pp_model
       end      
 
       %   Conditional intensity function
-      subplot(2,3,1)            
+      subplot(2,3,1); hold on;
       plot(t_axis(1:length(obj.CIF)),obj.CIF/dt,PLOT_COLOR);      
       title('$\lambda_t$','interpreter','latex');
       xlabel('time [s]');
       ylabel('[Hz]');
 
       %   Residual process
-      subplot(2,3,2)
+      subplot(2,3,2); hold on;
       sum_CIF=cumsum(obj.CIF);
       num0t=cumsum(obj.y);
       plot(t_axis(end-length(obj.CIF)+1:end),num0t(end-length(obj.CIF)+1:end)-sum_CIF,PLOT_COLOR,'LineWidth',2);
@@ -673,7 +675,7 @@ classdef pp_model
       xlabel('time [s]');
 
       %   Rescaled ISI dist.
-      subplot(2,3,3)      
+      subplot(2,3,3); hold on;
       [yh,xh]=hist(obj.rsISI);
       bar(xh,yh./length(obj.rsISI));
       title('rescaled ISIs','interpreter','latex');
@@ -682,7 +684,7 @@ classdef pp_model
       set(gca,'XTick',[]);
 
       %   KS plot (Exp[1] vs rescaled ISI dist.)
-      subplot(2,3,4)
+      subplot(2,3,4); hold on;
       plot(eCDF, aCDF, PLOT_COLOR, 'LineWidth', 2); hold on;
       plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
           'r-', [0:0.2:1], [0:0.2:1], 'r-', 'LineWidth', 3);
@@ -696,7 +698,7 @@ classdef pp_model
 
       % Rotated KS plot
       % show correlation among residual and some covarite(s)???
-      subplot(2,3,5)            
+      subplot(2,3,5); hold on;  
       plot(xCDF,aCDF-eCDF,PLOT_COLOR,'LineWidth',2);
       hold on;
       plot([0,1],[ks_ci ks_ci],'r', 'LineWidth',2);
@@ -705,7 +707,7 @@ classdef pp_model
       title('KS plot (rotated)');
 
       %   Autocorrelation
-      subplot(2,3,6)
+      subplot(2,3,6); hold on;
       numLags=min(200,numISIs-1);
       [ac,lags,bounds]=autocorr2(obj.rsISI,numLags,round(0.3*numLags),2);
       plot(lags, ac, [PLOT_COLOR 'x']); hold on
@@ -716,6 +718,44 @@ classdef pp_model
 
       update_fig();      
     end
-       
+    
+    function ks_plot(obj)
+      global PLOT_COLOR
+      global RESCALE_FUNC
+      
+      numISIs = length(obj.rsISI);
+      %   calculate ks statistic, confidence bounds      
+      if numISIs>2
+        [eCDF,xCDF] = ecdf(sort(obj.rsISI));
+        switch RESCALE_FUNC
+        case 'identity'
+          mycdf = @(x)(expcdf(x,1));
+        case 'exp'
+          mycdf = @(x)(unifcdf(x,0,1));
+        end        
+        aCDF = mycdf(xCDF);                    
+        ks_stat = max(abs(aCDF-eCDF));
+        ks_ci = 1.96/sqrt(numISIs+1);
+      else
+        ks_stat = NaN;
+        ks_ci = NaN;
+        fprintf('Error: Too few events in data for GoF analysis\n');
+        return;
+      end
+
+      %   KS plot (e.g. Exp[1] vs rescaled ISI dist.)
+      plot(eCDF, aCDF, PLOT_COLOR, 'LineWidth', 2); hold on;
+      plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
+          'r-', [0:0.2:1], [0:0.2:1], 'r-', 'LineWidth', 3);
+      set(gca,'XTick',[0:0.2:1]);
+      set(gca,'YTick',[0:0.2:1]);
+      title('KS plot');
+      xlabel('Quantiles');
+      ylabel('CDF');
+      text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
+      text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
+      update_fig();
+    end
+      
   end
 end

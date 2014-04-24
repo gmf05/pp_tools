@@ -26,11 +26,13 @@ classdef pp_data
   methods
     % Constructor
     function obj = pp_data(dn,t,Name,Labels)
+      
       obj.dn = dn;
       obj.N_channels = size(dn,1);
-      obj.t=t;
-      obj.T=length(t);
-      obj.dt=t(2)-t(1);
+      obj.T = size(dn,2);
+      if nargin<2, obj.t = 1:T;
+      else obj.t = t; end
+      obj.dt = obj.t(2) - obj.t(1);
       if nargin<3, Name = ''; end
       if nargin<4, Labels = {}; end
       obj.Name = Name;
@@ -90,6 +92,9 @@ classdef pp_data
       if nargin<3, params = pp_params(); end
       
       [tmins,~,N_windows] = params.window_taxis(obj.t(1),obj.t(end));
+      %%% HACK: something is broken here
+      N_windows = N_windows - 1;  tmins = tmins(1:N_windows);
+      %%%
       win_bins = floor(params.window(1) / obj.dt);
       dW_bins = floor(params.window(2) / obj.dt);      
       ttl = regexprep(obj.Name,'_',' ');
@@ -98,7 +103,6 @@ classdef pp_data
       win_rate = zeros(obj.N_channels,N_windows);
       switch plot_type
         case 'rate'
-%           win_rate = zeros(1,N_windows);
           for i = 1:obj.N_channels
             count = 1;
             for n = 1:N_windows

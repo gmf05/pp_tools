@@ -69,7 +69,8 @@ classdef Neuroport
     T = size(Ws,2);
 
     % plotting---
-    figure('units','normalized','position',[0 0 1 1]);
+%     figure('units','normalized','position',[0 0 1 1]);
+    clf, set(gcf,'units','normalized','position',[0 0 1 1]);
     
     % set up colormap
     colormap('default'), color_RGB = colormap();
@@ -95,5 +96,41 @@ classdef Neuroport
       set(gca,'YTick',[]);
     end
   end
+  
+  function plot_dir(obj, dirv)
+    
+%     if isequal(class(Ts),'char')
+%       switch Ts
+%         case 'up'
+%           theta = pi/2*ones(obj.N_electrodes,1);
+%         case 'down'
+%           theta = 1.5*pi*ones(obj.N_electrodes,1);
+%         case 'left'
+%           theta = pi*ones(obj.N_electrodes,1);
+%         case 'right'
+%           theta = 0*ones(obj.N_electrodes,1);
+%       end
+%       Ts = theta;
+%     end
+    obj.plot();
+    hold on;
+    for n = 1:obj.N_electrodes
+      x = obj.coord(n,1);
+      y = obj.coord(n,2);
+      
+      % polar coordinates
+%       x2 = x+dirv(n,1)*cos(dirv(n,2));
+%       y2 = y+dirv(n,1)*sin(dirv(n,2));
+
+      % cartesian coordinates (dx, dy)
+      x2 = x + dirv(n,1);
+      y2 = y + dirv(n,2);
+      
+      plot([x x2],[y y2], 'b');
+    end
+      
+    end
+    
+  
   end
 end
