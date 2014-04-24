@@ -77,7 +77,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     cleantemp = removeoutliers(cumspks); % outliers removed
     out = setdiff(cumspks, cleantemp); % set of outliers
     N_out = length(out);
-    
+
     out_ind = [];
     count = 1;
     for i = 1:N_out
