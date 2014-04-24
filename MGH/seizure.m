@@ -13,7 +13,9 @@ classdef seizure
     Name
     Patient
     ECoG
+    EEG
     LFP
+    MUA
     Sync
   end
   

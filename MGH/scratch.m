@@ -1,65 +1,27 @@
+% %%
+count = 1;
+% d = get_spikes('MG49','Seizure45','MUA');
+d = get_spikes('MG49','Seizure45','LFP');
+% d = get_spikes('MG49','Seizure45','ECoG');
+p = pp_params();
 
-Ne = 96; % number of electrodes
-Ws = zeros(Ne,1);
-cov_ind = 2;
-bad_val = 0;
-Y = zeros(Ne,501);
-for i = 1:Ne
-  try
-    [t,y] = plot_spline(p.covariate_knots{cov_ind},ms{i}.b(p.covariate_ind{cov_ind}));
-%     Y(i,:) = exp(y);
-%     Ws(i) = exp(max(y));
-%     Ws(i) = exp(y(1));
-%     Ws(i) = ms{i}.KS(1);
-  catch    
-%     Ws(i) = bad_val;
-  end
-end
 
-%%
-
-% cax = [min(Ws),max(Ws)]; % color axis
-Neuroport(Ws,cax);
-
-%% compute deviance & AIC for models missing these measures
-
-for i = 1:96
-  i
-  if ~isempty(ms_ens2{i,1})
-    ms_null{i,1}.dev = 2*(sum(log(poisspdf(ms_null{i,1}.y,ms_null{i,1}.y))) - ms_null{i,1}.LL);
-    ms_null{i,1}.AIC = ms_null{i,1}.dev + 2*length(ms_null{i,1}.b);
-    
-    ms_ens0{i,1}.dev = 2*(sum(log(poisspdf(ms_ens0{i,1}.y,ms_ens0{i,1}.y))) - ms_ens0{i,1}.LL);
-    ms_ens0{i,1}.AIC = ms_ens0{i,1}.dev + 2*length(ms_ens0{i,1}.b);
-
-    ms_ens1{i,1}.dev = 2*(sum(log(poisspdf(ms_ens1{i,1}.y,ms_ens1{i,1}.y))) - ms_ens1{i,1}.LL);
-    ms_ens1{i,1}.AIC = ms_ens1{i,1}.dev + 2*length(ms_ens1{i,1}.b);
-    
-    ms_ens2{i,1}.dev = 2*(sum(log(poisspdf(ms_ens2{i,1}.y,ms_ens2{i,1}.y))) - ms_ens2{i,1}.LL);
-    ms_ens2{i,1}.AIC = ms_ens2{i,1}.dev + 2*length(ms_ens2{i,1}.b);
-  end
+% ms = cell(d.N_channels,6);
+% for response = 1:d.N_channels
+for response = 1
+  p = pp_params();
+  p = p.add_covar('rate',0,[0,1],'spline'); % baseline rate
+%   p = p.add_covar('self-hist',response,[1 10:15:100 150:50:250 500],'spline');
+%   p = p.add_covar('pop-hist',setdiff(1:d.N_channels,response),[0 10:15:100 150:50:250 500],'spline');
+%   p.response = response;
+%   p = p.add_covar('pop-up',c_up,[0 10:15:100 150:50:250 500],'spline');
+%   p = p.add_covar('pop-down',c_down,[0 10:15:100 150:50:250 500],'spline');
+%   p = p.add_covar('pop-left',c_left,[0 10:15:100 150:50:250 500],'spline');
+%   p = p.add_covar('pop-right',c_right,[0 10:15:100 150:50:250 500],'spline');
   
-  if ~isempty(ms_ens2{i,2})
-    ms_null{i,2}.dev = 2*(sum(log(poisspdf(ms_null{i,2}.y,ms_null{i,2}.y))) - ms_null{i,2}.LL);
-    ms_null{i,2}.AIC = ms_null{i,2}.dev + 2*length(ms_null{i,2}.b);
-    
-    ms_ens0{i,2}.dev = 2*(sum(log(poisspdf(ms_ens0{i,2}.y,ms_ens0{i,2}.y))) - ms_ens0{i,2}.LL);
-    ms_ens0{i,2}.AIC = ms_ens0{i,2}.dev + 2*length(ms_ens0{i,2}.b);
-    
-    ms_ens1{i,2}.dev = 2*(sum(log(poisspdf(ms_ens1{i,2}.y,ms_ens1{i,2}.y))) - ms_ens1{i,2}.LL);
-    ms_ens1{i,2}.AIC = ms_ens1{i,2}.dev + 2*length(ms_ens1{i,2}.b);
-    
-    ms_ens2{i,2}.dev = 2*(sum(log(poisspdf(ms_ens2{i,2}.y,ms_ens2{i,2}.y))) - ms_ens2{i,2}.LL);
-    ms_ens2{i,2}.AIC = ms_ens2{i,2}.dev + 2*length(ms_ens2{i,2}.b);
-  end
+  m = pp_model();
+  m = m.fit(d,p);
+  m
+  ms{response,count} = m;
 end
-
-
-%%
-lag = 45;
-for i = 1:96
-  x1 = d.dn(i,1:end-lag);
-  x2 = d.dn(i,lag+1:end);
-  ac = sum(x1.*x2)/sqrt(sum(x1)*sum(x2));
-  AC(i) = ac;
-end
+count = count+1;

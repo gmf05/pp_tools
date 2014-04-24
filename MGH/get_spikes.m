@@ -46,7 +46,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     fprintf('Done!\nPreprocessing...\n');
     szX.Onset = sz.Onset; szX.Offset = sz.Offset;
     d = szX.Data;
-    NT = size(d,1); 
+    NT = size(d,1);
     N_channels = size(d,2);
     Fs = round(szX.SamplingRate);
     dt = 1/Fs;
@@ -63,7 +63,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     fprintf(['Done!\nFinding spikes...\n']);
     
     for n = 1:N_channels
-      fprintf(['Channel #' num2str(n) '\n']);
+      if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
       spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);
       spikes{n} = t(spkind);
       dn(n,spkind) = 1;

@@ -136,7 +136,11 @@ classdef pp_data
           colorbar;
           title({ttl; 'firing rates'});
         case 'isi'
-          isi_axis = 1:10:ceil(.15/obj.dt);
+          if obj.dt>5e-4
+            isi_axis = 1:10:ceil(1/obj.dt);
+          else
+            isi_axis = 1:100:ceil(.5/obj.dt);
+          end
           isi_hist = zeros(length(isi_axis),N_windows);
           count = 1;
           for n = 1:N_windows

@@ -498,7 +498,7 @@ classdef pp_model
       switch p.covariate_bases{1}
         case 'spline'
           if DO_CONF_INT              
-            [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,obj.W1,Z);
+            [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,obj.W,Z);
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
