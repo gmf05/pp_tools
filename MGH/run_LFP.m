@@ -1,13 +1,7 @@
-%% load data
-s = seizure('MG49','Seizure45');
-d = s.LFP.PPData;
-d = d.sub_time(20,d.t(end)-20);
-% d = d.downsample(8);
-d = d.downsample(32);
-% d = d.downsample(64);
-
-%% set parameters
+d = get_spikes('MG49','Seizure36','LFP'); % load data
 m = pp_model();
+
+% set parameters
 p = pp_params();
 
 response = 1;
@@ -37,7 +31,7 @@ p.noise = noise;
 p.downsample_est = 5;
 
 ms = cell(1,d.N_channels);
-%%
+
 for response = 1:d.N_channels
 % for response = 1
   response
@@ -54,4 +48,4 @@ for response = 1:d.N_channels
   ms{response} = m;
 end
 
-save MG49_Seizure45_pp_thresh1_static0 ms p
+save([d.Name,'_models.mat'],'ms','p');

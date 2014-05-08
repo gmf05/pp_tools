@@ -68,6 +68,7 @@ end
 
 %%
 % load mg49_s45_lfp_models
+
 N = Neuroport('MG49');
 count = 5;
 for response = 1:d.N_channels
@@ -109,7 +110,7 @@ for response = 1:d.N_channels
     end
   end
 end
-%%
 
-save mg49_s45_lfp_models ms ps
+
+% save mg49_s45_lfp_models ms ps
 % save mg49_s36_lfp_models ms p

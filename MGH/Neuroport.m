@@ -74,7 +74,8 @@ classdef Neuroport
     
     % set up colormap
     colormap('default'), color_RGB = colormap();
-
+%     my_img = phaseintensity(Ws);
+    
     for t = 1:T
       for n = 1:obj.N_electrodes
         % set coordinates
@@ -84,6 +85,7 @@ classdef Neuroport
         col_ind = round((Ws(n,t)-cax(1))/C*63)+1;
         col_ind = min(col_ind,64); col_ind = max(col_ind,1);
         col = color_RGB(col_ind,:);
+%         col = reshape(my_img(n,:,:),1,[]); % phase intensity
         % fill
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
         text(x,y,num2str(n),'fontsize',22);
