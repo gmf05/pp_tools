@@ -20,6 +20,7 @@ function [sz] = buildsyncdataset_GMF2(patient, seizure, dataPath, onset, offset)
 fprintf(['Working on ' patient ' ' seizure ': \n']);
 
 info = szinfo(dataPath, patient, seizure);
+info
 if isempty(info)
     error(['No seizure information for ' patient seizure '.']);
 end
@@ -37,16 +38,18 @@ ecogFs = ecogProp.SampleRate(1);
 % lfpFs = 1/lfpProp.Period;
 
 % NEW:
+OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
 lfpFs = d.MetaTags.SamplingFreq;
+cd(OLD_DIR);
 
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
 
 % Load only the ecogCh ECoG channels (there are also EEG data)
 ecogSzOn = max([1, round((info.StartTime - onset) * ecogFs)]);
-ecogSzOff = min([round((info.EndTime + offset) * ecogFs), length(d)]);
+ecogSzOff = min([round((info.EndTime + offset) * ecogFs), length(ecogRef)]);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 
 % OLD:
@@ -55,6 +58,7 @@ ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 % fclose(ecogProp.FILE.FID);
 
 % NEW:
+% error('asdf')
 [d, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh(1));
 fclose(ecogProp.FILE.FID);
 dECoG = zeros(ecogSzOff - ecogSzOn + 1, length(ecogCh));
@@ -67,7 +71,7 @@ parfor i = 2:length(ecogCh)
     fclose(prop.FILE.FID);
 end
 
-fprintf('ECoG loaded');
+fprintf('ECoG loaded\n');
 
 % Do LFP/ECoG syncing:
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
@@ -118,18 +122,22 @@ if isfield(info, 'EEG')
 end
 
 % Now get the original LFP data
+OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
+lfpProp
 
 % OLD:
 % dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
 
 % NEW:
+
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
                                          ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
 dLFP = dLFP.Data';
 
 %fclose(lfpProp.FID);
 fprintf('LFP loaded');
+cd(OLD_DIR);
 
 % trim LFP data to window of interest + sync to ECoG
 dLFP = dLFP(lfp_t_ind,:);
