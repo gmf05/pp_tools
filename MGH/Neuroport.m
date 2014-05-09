@@ -17,7 +17,7 @@ classdef Neuroport
     % get coordinate remapping
     global DATA_DIR
     patient = obj.patient;
-    num= xlsread([DATA_DIR '/' patient '/' patient '.xls']);
+    num= xlsread([DATA_DIR '/' patient '/' patient '_lfp.xls']);
     arrayMap = NaN(10,10);
     for n = 1:96;
       arrayMap(num(n,1)+1,num(n,2)+1) = n;

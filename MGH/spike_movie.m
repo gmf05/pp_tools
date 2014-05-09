@@ -1,6 +1,6 @@
-pat = 'MG49';
-sz = 'S36';
-doSave = true;
+pat = 'M63';
+sz = 'S3';
+doSave = false;
 if doSave
   VW = VideoWriter([pat '_' sz '_late.avi']);
   VW.open();
@@ -17,20 +17,21 @@ end
 % % % end
 % % % time = (1:length(d_post))/3e4 - 20;
 
-N = Neuroport('MG49');
+N = Neuroport(pat);
 
-tmin = 120; tmax = 122;
+% tmin = 120; tmax = 122;
 % tmin = 115; tmax = 150;
+tmin = 80; tmax = 90;
 trange = getclosest(time,tmin):getclosest(time,tmax);
 time_W = time(trange);
 Ws = d_post(trange,:)';
 T = size(Ws,2);
 
-spike_dn = zeros(N.N_electrodes,T);
-for n = 1:N.N_electrodes
-  ind = hilbertspike(Ws(n,:),1,1);
-  spike_dn(n,ind) = 1;
-end
+% spike_dn = zeros(N.N_electrodes,T);
+% for n = 1:N.N_electrodes
+%   ind = hilbertspike(Ws(n,:),1,1);
+%   spike_dn(n,ind) = 1;
+% end
 % 
 % Ws = -Ws;
 % 
