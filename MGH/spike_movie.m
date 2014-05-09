@@ -1,4 +1,4 @@
-pat = 'M63';
+pat = 'MG63';
 sz = 'S3';
 doSave = false;
 if doSave
@@ -79,8 +79,8 @@ response_list = [33, 42, 84];
 % response_list = [41 76 82];
 for i = 1:3
   r = response_list(i);
-  spike_ind = find(spike_dn(r,:));
-  subplot(3,2,2*i); plot(time_W,Ws(r,:)); hold on, plot(time_W(spike_ind), Ws(r,spike_ind),'rx');  xlim([tmn,tmx]); ylim([-8,8]);
+%   spike_ind = find(spike_dn(r,:));
+  subplot(3,2,2*i); plot(time_W,Ws(r,:)); %hold on, plot(time_W(spike_ind), Ws(r,spike_ind),'rx');  xlim([tmn,tmx]); ylim([-8,8]);
 end
 
 dW = 1;
