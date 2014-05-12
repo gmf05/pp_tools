@@ -55,7 +55,7 @@ classdef Neuroport
     
     if isempty(obj.color) && nargin<3
       if max(range(Ws))==0
-        cax = [Ws(1)-1 Ws(1)];
+        cax = [NaN];
       else
         cax = [min(min(Ws)) max(max(Ws))];
       end
@@ -63,7 +63,7 @@ classdef Neuroport
       cax = obj.color;
     end
 
-    C = cax(2)-cax(1);
+    C = cax(2)-cax(1);    
     R = 0.5;
     if size(Ws,2)==obj.N_electrodes && size(Ws,1)~=obj.N_electrodes, Ws = Ws'; end
     T = size(Ws,2);
@@ -82,9 +82,13 @@ classdef Neuroport
         x = obj.coord(n,1);
         y = obj.coord(n,2);
         % get color
-        col_ind = round((Ws(n,t)-cax(1))/C*63)+1;
-        col_ind = min(col_ind,64); col_ind = max(col_ind,1);
-        col = color_RGB(col_ind,:);
+        if isnan(C)
+          col = 'w';
+        else          
+          col_ind = round((Ws(n,t)-cax(1))/C*63)+1;
+          col_ind = min(col_ind,64); col_ind = max(col_ind,1);
+          col = color_RGB(col_ind,:);
+        end
 %         col = reshape(my_img(n,:,:),1,[]); % phase intensity
         % fill
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
