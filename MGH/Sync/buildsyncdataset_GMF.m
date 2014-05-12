@@ -20,7 +20,6 @@ function [sz] = buildsyncdataset_GMF(patient, seizure, dataPath, onset, offset)
 fprintf(['Working on ' patient ' ' seizure ': \n']);
 
 info = szinfo(dataPath, patient, seizure);
-info
 if isempty(info)
     error(['No seizure information for ' patient seizure '.']);
 end
@@ -39,7 +38,6 @@ lfpProp = NSX_open(info.LFP.Ns5File);
 % lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)'; % >> "bad offset"
 % lfpFs = 1/lfpProp.Period; % often >> division by 0
 % =========== TESTING SOME NEW CODE HERE============================
-% FROM buildsyncdataset_GMF2.m .... not sure if this is new or old
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
 lfpFs = d.MetaTags.SamplingFreq;
@@ -108,12 +106,10 @@ OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 % dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
 % =========== TESTING SOME NEW CODE HERE============================
-% FROM buildsyncdataset_GMF2.m .... not sure if this is new or old
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
                                          ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
-
+dLFP = dLFP.Data;                                       
 % ==================================================================
-%fclose(lfpProp.FID);
 fprintf('LFP loaded');
 cd(OLD_DIR);
 
@@ -149,7 +145,7 @@ if isfield(info, 'EEG')
 end
 
 % Create structure with syncing information
-syncCheck = struct('ecogRef', ecogRef, 'lfpRef', lfpRef, 'ecogIdx', ecogIdx, 'lfpIdx', lfpIdx, 'lfpSzOn', lfpSzOn, 'lfpSzOff', lfpSzOff);
+syncCheck = struct('ecogRef', ecogRef, 'lfpRef', lfpRef, 'ecogIdx', ecogIdx, 'lfpIdx', lfpIdx, 'lfpSzOn', lfpSzOn, 'lfpSzOff', lfpSzOff, 'lfpSzIdx', lfp_t_ind);
 sz.sync = syncCheck;
 
 % Save data
