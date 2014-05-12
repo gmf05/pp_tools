@@ -33,11 +33,14 @@ lfpSyncCh = info.LFP.SyncCh;
 ecogFs = ecogProp.SampleRate(1);
 ecogSzOn = max([1, round((info.StartTime - onset) * ecogFs)]);
 ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
+
+OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 % lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)';
 lfpFs = 1/lfpProp.Period;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
+cd(OLD_DIR);
 
 % Load only the ecogCh ECoG channels (there are also EEG data)
 [dECoG, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh);
