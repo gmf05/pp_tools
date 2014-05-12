@@ -103,58 +103,26 @@ classdef Neuroport
     end
   end
   
-  function plot_dir(obj, dirv)
+   function plot_dir(obj, dirs)
     
-%     if isequal(class(Ts),'char')
-%       switch Ts
-%         case 'up'
-%           theta = pi/2*ones(obj.N_electrodes,1);
-%         case 'down'
-%           theta = 1.5*pi*ones(obj.N_electrodes,1);
-%         case 'left'
-%           theta = pi*ones(obj.N_electrodes,1);
-%         case 'right'
-%           theta = 0*ones(obj.N_electrodes,1);
-%       end
-%       Ts = theta;
+    obj.plot();
+    hold on;
+    
+%     switch dir_type
+%       case 'polar'
+%         dx = obj.coord(:,1) - dirs(:,1).*cos(dirs(:,2));
+%         dy = obj.coord(:,2) - dirs(:,1).*sin(dirs(:,2));
+%       case 'cart'
+%         dx = obj.coord(:,1) - dirs(:,1);
+%         dy = obj.coord(:,2) - dirs(:,2);
 %     end
-    obj.plot();
-    hold on;
-    for n = 1:obj.N_electrodes
-      x = obj.coord(n,1);
-      y = obj.coord(n,2);
-      
-      % polar coordinates
-%       x2 = x+dirv(n,1)*cos(dirv(n,2));
-%       y2 = y+dirv(n,1)*sin(dirv(n,2));
-
-      % cartesian coordinates (dx, dy)
-      x2 = x + dirv(n,1);
-      y2 = y + dirv(n,2);
-      
-      plot([x x2],[y y2], 'b');
-    end
-      
-  end
-  
-  function plot_dir2(obj, dirv)
     
-    obj.plot();
-    hold on;
     for n = 1:obj.N_electrodes
-      x = obj.coord(n,1);
-      y = obj.coord(n,2);
-      
-      % polar coordinates
-%       x2 = x+dirv(n,1)*cos(dirv(n,2));
-%       y2 = y+dirv(n,1)*sin(dirv(n,2));
-
-      % cartesian coordinates (dx, dy)
-      dir_n = [0 1]*dirv(n,1) + [0 -1]*dirv(n,2) + [-1 0]*dirv(n,3) + [1 0]*dirv(n,4);
-      x2 = x + 10*dir_n(1);
-      y2 = y + 10*dir_n(2);
-      
-      plot([x2 x],[y2 y], 'b');
+      dir_n = [0 1]*dirs(n,1) + [0 -1]*dirs(n,2) + [-1 0]*dirs(n,3) + [1 0]*dirs(n,4);
+      x2 = x - dir_n(1);
+      y2 = y - dir_n(2);
+      plot([obj.coord(n,1) x2],[obj.coord(n,2) y2], 'b');
+%       plot([obj.coord(n,1) dx(n)],[obj.coord(n,2) dy(n)], 'b');
     end
       
   end
