@@ -59,6 +59,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     d = d(start_ind:end_ind,:);
     d = preprocessing(d, data_type);
     d = d'; % get in row = channel form
+    save([DATA_DIR '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered'],'d','t');
     dn = 0*d;
     fprintf(['Done!\nFinding spikes...\n']);
     
@@ -101,8 +102,8 @@ function data = get_spikes(patient_name,seizure_name,data_type)
       case {'ECoG', 'EEG'}
         fprintf(['No downsampling.\n']);        
       case 'LFP', 
-        fprintf(['Downsampling by 32x\n']);
-        data = data.downsample(32);
+        fprintf(['Trying to downsample by 32x\n']);
+        try, data = data.downsample(32); end;
       case 'MUA'
         fprintf(['Need to figure out whether to downsample here\n']);
     end
