@@ -36,7 +36,12 @@ ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
-lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)';
+% lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)'; % >> "bad offset"
+% =========== TESTING SOME NEW CODE HERE============================
+% FROM buildsyncdataset_GMF2.m .... not sure if this is new or old
+d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
+lfpRef = d.Data';
+% ==================================================================
 lfpFs = 1/lfpProp.Period;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
@@ -100,7 +105,13 @@ end
 % Now get the original LFP data
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
-dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
+% dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
+% =========== TESTING SOME NEW CODE HERE============================
+% FROM buildsyncdataset_GMF2.m .... not sure if this is new or old
+dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
+                                         ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
+
+% ==================================================================
 %fclose(lfpProp.FID);
 fprintf('LFP loaded');
 cd(OLD_DIR);
