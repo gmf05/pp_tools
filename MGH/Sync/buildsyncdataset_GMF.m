@@ -53,7 +53,7 @@ dECoG = dECoG(ecogSzOn : ecogSzOff, :);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded');
-
+dbstop if error; error('asdf');
 % Do LFP/ECoG syncing:
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
 
