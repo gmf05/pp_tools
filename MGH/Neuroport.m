@@ -110,19 +110,17 @@ classdef Neuroport
     
 %     switch dir_type
 %       case 'polar'
-%         dx = obj.coord(:,1) - dirs(:,1).*cos(dirs(:,2));
-%         dy = obj.coord(:,2) - dirs(:,1).*sin(dirs(:,2));
-%       case 'cart'
-%         dx = obj.coord(:,1) - dirs(:,1);
-%         dy = obj.coord(:,2) - dirs(:,2);
+%         dx = dirs(:,1).*cos(dirs(:,2));
+%         dy = dirs(:,1).*sin(dirs(:,2));
+%       else
+%         dx = dirs(:,1);
+%         dy = dirs(:,2);
 %     end
     
     for n = 1:obj.N_electrodes
       dir_n = [0 1]*dirs(n,1) + [0 -1]*dirs(n,2) + [-1 0]*dirs(n,3) + [1 0]*dirs(n,4);
-      x2 = x - dir_n(1);
-      y2 = y - dir_n(2);
-      plot([obj.coord(n,1) x2],[obj.coord(n,2) y2], 'b');
-%       plot([obj.coord(n,1) dx(n)],[obj.coord(n,2) dy(n)], 'b');
+      plot(obj.coord(n,1) + [-dir_n(1) 0], obj.coord(n,2) + [-dir_n(2) 0], 'b');
+%       plot(obj.coord(n,1) + [-dx(n) 0], obj.coord(n,2) + [-dy(n) 0], 'b');
     end
       
   end
