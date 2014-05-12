@@ -20,6 +20,7 @@ function [sz] = buildsyncdataset_GMF(patient, seizure, dataPath, onset, offset)
 fprintf(['Working on ' patient ' ' seizure ': \n']);
 
 info = szinfo(dataPath, patient, seizure);
+info
 if isempty(info)
     error(['No seizure information for ' patient seizure '.']);
 end
