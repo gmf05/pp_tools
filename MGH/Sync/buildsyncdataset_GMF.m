@@ -98,10 +98,12 @@ if isfield(info, 'EEG')
 end
 
 % Now get the original LFP data
+OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
 %fclose(lfpProp.FID);
 fprintf('LFP loaded');
+cd(OLD_DIR);
 
 % clip LFP to window of interest
 dLFP = dLFP(1:length(lfp_t_ind),:);
