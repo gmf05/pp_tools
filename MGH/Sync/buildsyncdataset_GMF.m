@@ -36,7 +36,7 @@ ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
-% lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)';
+lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)';
 lfpFs = 1/lfpProp.Period;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
@@ -46,7 +46,7 @@ cd(OLD_DIR);
 [dECoG, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh);
 dECoG = dECoG(ecogSzOn : ecogSzOff, :);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
-% fclose(ecogProp.FILE.FID);
+fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded');
 
 % Do LFP/ECoG syncing:
