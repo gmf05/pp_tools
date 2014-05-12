@@ -132,7 +132,7 @@ classdef Neuroport
       x2 = x + dirv(n,1);
       y2 = y + dirv(n,2);
       
-      plot([x2 x],[y2 y], 'b');
+      plot([x x2],[y y2], 'b');
     end
       
   end
@@ -154,7 +154,7 @@ classdef Neuroport
       x2 = x + 10*dir_n(1);
       y2 = y + 10*dir_n(2);
       
-      plot([x x2],[y y2], 'b');
+      plot([x2 x],[y2 y], 'b');
     end
       
   end
