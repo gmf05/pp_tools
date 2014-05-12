@@ -55,7 +55,7 @@ classdef Neuroport
     
     if isempty(obj.color) && nargin<3
       if max(range(Ws))==0
-        cax = [NaN];
+        cax = [NaN NaN];
       else
         cax = [min(min(Ws)) max(max(Ws))];
       end
@@ -132,7 +132,7 @@ classdef Neuroport
       x2 = x + dirv(n,1);
       y2 = y + dirv(n,2);
       
-      plot([x x2],[y y2], 'b');
+      plot([x2 x],[y2 y], 'b');
     end
       
   end
