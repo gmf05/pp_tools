@@ -37,12 +37,13 @@ ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 % lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)'; % >> "bad offset"
+% lfpFs = 1/lfpProp.Period; % often >> division by 0
 % =========== TESTING SOME NEW CODE HERE============================
 % FROM buildsyncdataset_GMF2.m .... not sure if this is new or old
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
+lfpFs = d.MetaTags.SamplingFreq;
 % ==================================================================
-lfpFs = 1/lfpProp.Period;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
 cd(OLD_DIR);
@@ -53,7 +54,7 @@ dECoG = dECoG(ecogSzOn : ecogSzOff, :);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded');
-dbstop if error; error('asdf');
+
 % Do LFP/ECoG syncing:
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
 
