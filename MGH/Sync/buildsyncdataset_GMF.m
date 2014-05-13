@@ -54,6 +54,7 @@ fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded\n');
 
 % Do LFP/ECoG syncing:
+lfpFs, lfpFs = 3e4;
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
 
 % find beginning of lfp time by working backwards from first sync in ecog
