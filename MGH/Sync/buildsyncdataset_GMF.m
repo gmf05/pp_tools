@@ -37,15 +37,9 @@ ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
-% lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)'; % >> "bad offset"
-% lfpFs = 1/lfpProp.Period; % often >> division by 0
-% =========== TESTING SOME NEW CODE HERE============================
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
 lfpFs = d.MetaTags.SamplingFreq;
-d.MetaTags
-lfpFs
-% ==================================================================
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
 cd(OLD_DIR);
@@ -73,6 +67,7 @@ lfpSzOn = max([1, round((tmn - onset) * lfpFs)]);
 lfpSzOff = min([round((tmn+info.EndTime-info.StartTime + offset) * lfpFs), lfpMaxIdx]);
 tLFP = (0:lfpSzOff-lfpSzOn)/lfpFs - onset;
 
+% PATIENT MG49:
 % for each sync event, skip ahead ~500 bins in tLFP (~18 ms) to match tECoG
 %   (31.656 sec per sync in LFP vs. 31.674 per sync in ECoG)
 
@@ -121,20 +116,15 @@ end
 tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
-% dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
-% =========== TESTING SOME NEW CODE HERE============================
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
                                          ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
 dLFP = dLFP.Data';                                     
-% ==================================================================
 fprintf('LFP loaded\n');
 cd(OLD_DIR);
 toc
 
 % clip LFP to window of interest
-% dLFP = dLFP(1:length(lfp_t_ind),:);
 dLFP = dLFP(lfp_t_ind,:);
-% dLFP = dLFP(:,:);
 fprintf('LFP clipped -> sync with ECoG\n');
 
 % Create structures with synced data and its meta-data
