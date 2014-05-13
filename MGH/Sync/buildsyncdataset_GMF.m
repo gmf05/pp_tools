@@ -45,13 +45,13 @@ lfpFs = d.MetaTags.SamplingFreq;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
 cd(OLD_DIR);
-
+  
 % Load only the ecogCh ECoG channels (there are also EEG data)
 [dECoG, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh);
 dECoG = dECoG(ecogSzOn : ecogSzOff, :);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 fclose(ecogProp.FILE.FID);
-fprintf('ECoG loaded');
+fprintf('ECoG loaded\n');
 
 % Do LFP/ECoG syncing:
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
