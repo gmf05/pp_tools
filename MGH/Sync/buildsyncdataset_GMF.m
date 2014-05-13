@@ -17,7 +17,7 @@ function [sz] = buildsyncdataset_GMF(patient, seizure, dataPath, onset, offset)
 % 
 % Author: Louis-Emmanuel Martinet <louis.emmanuel.martinet@gmail.com>
 
-fprintf(['Working on ' patient ' ' seizure ': \n']);
+fprintf(['Working on ' patient ' ' seizure '... \n']);
 
 info = szinfo(dataPath, patient, seizure);
 if isempty(info)
@@ -41,6 +41,8 @@ lfpProp = NSX_open(info.LFP.Ns5File);
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
 lfpFs = d.MetaTags.SamplingFreq;
+d.MetaTags
+lfpFs
 % ==================================================================
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
