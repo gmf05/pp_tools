@@ -103,10 +103,11 @@ classdef Neuroport
     end
   end
   
-   function plot_dir(obj, dirs)
+   function plot_dir(obj, dirs, W)
     
     obj.plot();
     hold on;
+    if nargin<3, W = []; end
     
 %     switch dir_type
 %       case 'polar'
@@ -116,13 +117,16 @@ classdef Neuroport
 %         dx = dirs(:,1);
 %         dy = dirs(:,2);
 %     end
-    
+
     for n = 1:obj.N_electrodes
       dir_n = [0 1]*dirs(n,1) + [0 -1]*dirs(n,2) + [-1 0]*dirs(n,3) + [1 0]*dirs(n,4);
       plot(obj.coord(n,1) + [-dir_n(1) 0], obj.coord(n,2) + [-dir_n(2) 0], 'b');
 %       plot(obj.coord(n,1) + [-dx(n) 0], obj.coord(n,2) + [-dy(n) 0], 'b');
     end
       
+    
+    
+    
   end
     
     
