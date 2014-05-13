@@ -1,4 +1,4 @@
-function [spike_ind] = hilbertspike(d0, threshold, min_refract)
+function [spike_ind, amp] = hilbertspike(d0, threshold, min_refract)
 %
 %   [spike_times] = hilbertspike(d0, threshold, min_refract)
 %
@@ -34,6 +34,7 @@ t_axis = (1:NT);
 window_span = 20;
 h_transform=imag(hilbert(d0));      % "Phase information"
 h_spikes=[];                        % Empty array for time indices of spikes
+amp=[];
 
 % First we find a sequence of local max/min pairs, max_ind and min_ind
 dht = diff(h_transform);
@@ -84,6 +85,7 @@ while k < min(length(max_ind), length(min_ind))
         %first spike), save spike time
         if isempty(h_spikes) || temp_ind - h_spikes(end) >= min_refract
             h_spikes = [h_spikes temp_ind];
+            amp = [amp h_transform(max_ind(k))-h_transform(min_ind(k))];
             count=count+1;
         end
     end
