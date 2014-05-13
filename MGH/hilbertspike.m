@@ -85,7 +85,7 @@ while k < min(length(max_ind), length(min_ind))
         %first spike), save spike time
         if isempty(h_spikes) || temp_ind - h_spikes(end) >= min_refract
             h_spikes = [h_spikes temp_ind];
-            amp = [amp h_transform(max_ind(k))-h_transform(min_ind(k))];
+            amp = [amp d0(temp_ind)];
             count=count+1;
         end
     end

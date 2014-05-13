@@ -117,7 +117,7 @@ tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
-                                         ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
+                ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
 dLFP = dLFP.Data';                                     
 fprintf('LFP loaded\n');
 cd(OLD_DIR);

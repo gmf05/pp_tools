@@ -1,18 +1,30 @@
-% load /projectnb/ecog/Data/MG49/MG49_Seizure45_LFP_filtered
-%
-figure
-thresh = 0.4; spk_style = 'ro';
+%% this seems to get BIG spikes
 
-N_channels = size(d_post,2);
-% amps = cell(1,N_channels);
+% load ~/Desktop/test.mat % variables: D = data, time = time axis
+thresh = 1; spk_style = 'ro'; n = 1;
+[spkind,amp] = hilbertspike(D(:,n),thresh,1);
 
-for n = 1:N_channels
-  n
-% for n = 30
-  [spkind,amp] = hilbertspike(d_post(:,n),thresh,1);
-  amps2{n} = -d_post(spkind,n);
-%   amps{n} = amp;
-%   plot(time,d_post(:,n),'b'); hold on;
-%   plot(time(spkind),d_post(spkind,n),spk_style);
-%   pause; clf;
+figure, plot(time,D(:,n)); hold on;
+% plot(time(spkind),D(spkind,n),spk_style);
+
+%%-
+R = 0.05;
+T = 0:0.1:2*pi;
+color_RGB = colormap();
+mx_amp = max(amp);
+
+d_amp = diff(amp);
+
+for i = 1:length(spkind)-1
+  col = 'm';
+  if d_amp(i)<0
+    fill(time(spkind(i))+R*cos(T), D(spkind(i),n)+R*sin(T), col);
+  end
 end
+
+% %%
+% for i = 1:length(spkind)-1
+%   col_ind = ceil(amp(i)/mx_amp*64);
+%   col = color_RGB(col_ind,:);  
+%   fill(time(spkind(i))+R*cos(T), D(spkind(i),n)+R*sin(T), col);
+% end
