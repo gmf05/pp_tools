@@ -62,7 +62,7 @@ toc
 
 % Do LFP/ECoG syncing:
 tic
-lfpFs, lfpFs = 3e4;
+% lfpFs, lfpFs = 3e4;
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
 
 % find beginning of lfp time by working backwards from first sync in ecog
@@ -125,15 +125,16 @@ lfpProp = NSX_open(info.LFP.Ns5File);
 % =========== TESTING SOME NEW CODE HERE============================
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
                                          ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
-dLFP = dLFP.Data;                                       
+dLFP = dLFP.Data';                                     
 % ==================================================================
 fprintf('LFP loaded\n');
 cd(OLD_DIR);
 toc
 
 % clip LFP to window of interest
-dLFP = dLFP(1:length(lfp_t_ind),:);
-% dLFP = dLFP(:);
+% dLFP = dLFP(1:length(lfp_t_ind),:);
+dLFP = dLFP(lfp_t_ind,:);
+% dLFP = dLFP(:,:);
 fprintf('LFP clipped -> sync with ECoG\n');
 
 % Create structures with synced data and its meta-data
