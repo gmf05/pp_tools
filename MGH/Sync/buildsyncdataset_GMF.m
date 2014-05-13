@@ -19,6 +19,7 @@ function [sz] = buildsyncdataset_GMF(patient, seizure, dataPath, onset, offset)
 
 fprintf(['Working on ' patient ' ' seizure '... \n']);
 
+tic
 info = szinfo(dataPath, patient, seizure);
 if isempty(info)
     error(['No seizure information for ' patient seizure '.']);
@@ -33,6 +34,7 @@ ecogFs = ecogProp.SampleRate(1);
 ecogSzOn = max([1, round((info.StartTime - onset) * ecogFs)]);
 ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 
+tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 % lfpRef = NSX_read(lfpProp, lfpSyncCh, 1, 0, Inf)'; % >> "bad offset"
@@ -47,15 +49,19 @@ lfpFs
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
 cd(OLD_DIR);
+toc
   
 % Load only the ecogCh ECoG channels (there are also EEG data)
+tic
 [dECoG, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh);
 dECoG = dECoG(ecogSzOn : ecogSzOff, :);
 ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded\n');
+toc
 
 % Do LFP/ECoG syncing:
+tic
 lfpFs, lfpFs = 3e4;
 [ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
 
@@ -93,18 +99,26 @@ lfp_t_ind = [lfp_t_ind count:lfpSzOff-lfpSzOn];
 % trim time axis
 tLFP = tLFP(lfp_t_ind);
 fprintf('Synchronized indexing found\n');
+toc
 
 % Load EEG (if it exists)
 if isfield(info, 'EEG')
-    if isfield(info.EEG, 'Labels')
+  tic
+  if isfield(info.EEG, 'Labels')
         eegCh = label2index(info.EEG.Labels, ecogProp.Label);
         [dEEG, ~] = openEDF(info.ECoG.EdfFile, eegCh);
         dEEG = dEEG(ecogSzOn : ecogSzOff, :);
         fprintf('EEG loaded\n');
-    end
+  else
+    fprintf('EEG info incomplete\n');
+  end
+  toc
+else
+  fprintf('No EEG info found\n');
 end
 
 % Now get the original LFP data
+tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 % dLFP = NSX_read(lfpProp, lfpCh(1), lfpCh(end), lfpSzOn, lfpSzOff - lfpSzOn + 1, 'p', 'p')';
@@ -115,11 +129,12 @@ dLFP = dLFP.Data;
 % ==================================================================
 fprintf('LFP loaded\n');
 cd(OLD_DIR);
+toc
 
 % clip LFP to window of interest
 dLFP = dLFP(1:length(lfp_t_ind),:);
 % dLFP = dLFP(:);
-fprintf(', clipped (synced)\n');
+fprintf('LFP clipped -> sync with ECoG\n');
 
 % Create structures with synced data and its meta-data
 ecog = struct('Name', 'ecog', 'File', ecogProp.FileName, 'SamplingRate', ecogFs, ...
@@ -152,10 +167,12 @@ syncCheck = struct('ecogRef', ecogRef, 'lfpRef', lfpRef, 'ecogIdx', ecogIdx, 'lf
 sz.sync = syncCheck;
 
 % Save data
+tic
 fprintf('Saving...');
 % save([dataPath '/Synced_Multiscale_Mats/' patient '_' seizure '_LFP_ECoG_EEG.mat'], '-v7.3', 'sz');
 save(['~/' patient '_' seizure '_LFP_ECoG_EEG.mat'], '-v7.3', 'sz');
 fprintf('done.\n');
+toc
 
 % Plot the syncing results.
 % plot(tLFP,lfpRef/max(lfpRef),'b',tECoG,ecogRef,'r');
