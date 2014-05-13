@@ -32,9 +32,8 @@ SPIKE_THRESH_MUA = NaN; % will need to test this
 MIN_REFRACT = 1;
 
 % add paths:
-PP_TOOLS = pwd();
-% DATA_DIR = '/projectnb/ecog/Data'; % SCC
-DATA_DIR = '/media/Shared/GMF/Documents/BostonU/Research/Data'; % SCC
+PP_TOOLS = getenv('PP_TOOLS');
+DATA_DIR = getenv('DATA');
 addpath(genpath(PP_TOOLS));
 addpath(genpath(DATA_DIR));
 
