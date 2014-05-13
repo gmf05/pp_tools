@@ -110,7 +110,7 @@ dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfp
                                          ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
 dLFP = dLFP.Data;                                       
 % ==================================================================
-fprintf('LFP loaded');
+fprintf('LFP loaded\n');
 cd(OLD_DIR);
 
 % clip LFP to window of interest
