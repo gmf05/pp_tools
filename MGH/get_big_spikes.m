@@ -21,7 +21,7 @@ function data = get_big_spikes(patient_name,seizure_name,data_type)
     fprintf(['Loaded ' patient_name ' ' seizure_name ' @ thresh=' num2str(thresh) '\n']);
     load(pp_filename)
   else
-    j% else try to load just spikes -> convert to PP
+    % else try to load just spikes -> convert to PP
     % else find spikes
     fprintf(['Cannot find spikes for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
     fprintf('Loading raw data...\n');

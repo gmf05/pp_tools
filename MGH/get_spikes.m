@@ -61,6 +61,8 @@ function data = get_spikes(patient_name,seizure_name,data_type)
 
         fprintf('Preprocessing...');
         szX.Onset = sz.Onset; szX.Offset = sz.Offset;
+        Fs = round(szX.SamplingRate);
+        fNQ = Fs/2;
         d = szX.Data;
         N_channels = size(d,2);
         spikes = cell(1,N_channels);
@@ -133,7 +135,6 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     save(pp_filename, '-v7.3','data');
     fprintf('Done!\n\n');
   end
-end
 
 function d_post = preprocessing(d_pre, data_type)
 
@@ -160,9 +161,9 @@ switch data_type
   d_post = filtfilt(bS3,1,d_post);
   d_post = zscore(d_post);
   %-------------------------- local field potential (LFP)
-
-  case 'MUA'
+  
   %--------------------------  multiunit activity (MUA)
+  case 'MUA'
   fH = [0   299.5   300.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
   fL = [0 2999.5  3000.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
   bL = firls(2000,fH,zH);
@@ -172,9 +173,9 @@ switch data_type
   d_post = filtfilt(bL,1,d_post);
   d_post = zscore(d_post);
   %--------------------------  multiunit activity (MUA)
-
+  
+  %-------------------------- filtered ECoG
   case 'ECoG'
-  %-------------------------- filtered ECoG
   fH = [0  0.5   1.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
   fL = [1  119.5 120.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
   fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
@@ -196,8 +197,8 @@ switch data_type
   d_post = zscore(d_post);
   %-------------------------- filtered ECoG
 
+  %-------------------------- filtered EEG
   case 'EEG'
-  %-------------------------- filtered EEG
   fH = [0  0.5   1.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
   fL = [1  119.5 120.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
   fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
@@ -218,5 +219,6 @@ switch data_type
   % d_post = filtfilt(bS3,1,d_post);s
   d_post = zscore(d_post);
   %-------------------------- filtered EEG
+end
 end
 end
