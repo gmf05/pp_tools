@@ -1,11 +1,7 @@
 function data = get_big_spikes(patient_name,seizure_name,data_type)
   
-  global DATA_DIR
-  global MIN_REFRACT
-  global SPIKE_THRESH_EEG
-  global SPIKE_THRESH_ECOG
-  global SPIKE_THRESH_LFP
-  global SPIKE_THRESH_MUA
+  global DATA_DIR MIN_REFRACT SPIKE_THRESH_EEG SPIKE_THRESH_ECOG ...
+    SPIKE_THRESH_LFP SPIKE_THRESH_MUA
   
   switch data_type
     case 'EEG'
@@ -66,14 +62,13 @@ function data = get_big_spikes(patient_name,seizure_name,data_type)
     for n = 1:N_channels
       if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
       [spkind,amp] = hilbertspike(d(n,:),thresh,MIN_REFRACT);
-%       spkind = spkind(find(diff(amp)<0)+1);
       spikes{n} = t(spkind);
       amps{n} = amp;
       dn(n,spkind) = 1;
     end
     
     fprintf(['Done!\nSaving spikes...']);
-    save([Name '_spikes.mat'],'spikes','-v7.3');
+    save([Name '_spikes.mat'],'spikes','amps','-v7.3');
     fprintf('Done!\n');
 
     % remove any channels with very large/small spike counts
@@ -105,8 +100,13 @@ function data = get_big_spikes(patient_name,seizure_name,data_type)
       case {'ECoG', 'EEG'}
         fprintf(['No downsampling.\n']);        
       case 'LFP', 
-        fprintf(['Trying to downsample by 32x\n']);
-        try, data = data.downsample(32); end;
+        fprintf(['Trying to downsample by 32x...']);
+        try
+          data = data.downsample(32); 
+          fprintf('Done!\n');
+        catch
+          fprintf('Failed\n');
+        end
       case 'MUA'
         fprintf(['Need to figure out whether to downsample here\n']);
     end
