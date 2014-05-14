@@ -1,73 +1,68 @@
-% pp_tools;
-% sz = seizure('MG49','Seizure45');
-d = sz.LFP.PPData;
-% patient = 'MG49'; seizure = 'Seizure45'; 
-% load([DATA_DIR '/' patient '/' patient '_' seizure '_LFP_pp_thresh1']); d = data; clear data
-% d = sz.LFP.PPData;
-% d = d.downsample(32);
+% % %% load data
+s = seizure('MG49','Seizure45');
+d = s.LFP.PPData;
+% % d = d.sub_time(20,d.t(end)-20);
+% % % d = d.downsample(8);
+% % d = d.downsample(32);
+% % % d = d.downsample(64);
+
+% set parameters
+m = pp_model();
 p = pp_params();
 
-response = 44;
+response = 1;
 p.response = response;
 
 T_knots = [0 1];
 p = p.add_covar('rate', 0, T_knots, 'indicator');
 
 Q_knots = [1 21:20:101 151:50:501 1001];
+% Q_knots = [1 21:20:101 151:50:501];
 p = p.add_covar('self-hist', response, Q_knots, 'spline');
 
-R_knots = [1 21:20:101 151:50:501];
+R_knots = [0 21:20:101 151:50:501];
 p = p.add_covar('ensemble', [1:response-1, response+1:d.N_channels], R_knots, 'spline');
-
-% % plane wave dynamics
-% R_knots = [0];
-% p = p.add_covar('ensemble1', [42], R_knots, 'indicator');
-% p = p.add_covar('ensemble2', [43], R_knots, 'indicator');
-% p = p.add_covar('ensemble3', [46], R_knots, 'indicator');
-% p = p.add_covar('ensemble4', [51], R_knots, 'indicator');
-
-
 
 % fit_method = 'glmfit'; noise = [];
 fit_method = 'filt';
 % fit_method = 'smooth';
-noise = [0 1e-6 1e-7]; % gives 10Hz recruitment sig in c1
-% noise = [0 1e-6 1e-8]; % 
-% noise = [0 1e-6 1e-10]; % previously optimized (needs to be repeated)
+% noise = [0 1e-8 1e-10]; % small, seems to work well
+% noise = [0 1e-6 1e-8]; % small, seems to work well
+noise = [0 1e-5 1e-7]; % small, seems to work well
+% noise = [0 1e-8 1e-10];
+% noise = [0 1e-8 1e-10]; 
+% noise = [0 1e-5 1e-5];4,
 
 p.fit_method = fit_method;
 p.noise = noise;
 p.downsample_est = 200;
 
-m = pp_model();
-
-bs = cell(1, d.N_channels);
+% ms = cell(1,d.N_channels);
+cd(fit_method)
 % for response = 1:d.N_channels
-for response = 5:10:d.N_channels
+for response = 92:d.N_channels
   response
-  p.response = response; p.covariate_channels{2} = response;
-  p.covariate_channels{3} = [1:response-1, response+1:d.N_channels];  
-  m = m.fit(d,p);
-  m
-%   figure, m.plot(d,p); pause; hold off;
-%   figure, m.gof(d); pause; close all;
-%   bs{response} = m.b;
+  p.response = response;
+  p.covariate_channels{2} = response;
+  p.covariate_channels{3} = [1:response-1, response+1:d.N_channels];
+  try 
+      m = m.fit(d,p);
+      m
+      m.X = [];
+      m.plot(d,p);
+      subplot(3,1,2); colorbar; caxis([0,2]);
+      subplot(3,1,3); colorbar; caxis([0.8,1.2]);
+      plot2svg(['MG49_S45_' fit_method '_' num2str(response), '.svg']); pause(0.1); 
+      subplot(3,1,2); ylim([0,150]); subplot(3,1,3); ylim([0,150]);
+      plot2svg(['MG49_S45_' fit_method '_zoom_' num2str(response), '.svg']); pause(0.1); clf;
+  catch
+    m = pp_model();    
+    m.KS = [1 1];
+  end
+  
+%   all_KS(response) = m.KS(1);
+  
 %   ms{response} = m;
-
-  m.plot(d,p);
-  subplot(312); caxis([0,2]);
-  subplot(313); caxis([0.8,1.2]);
-  pause;
-  plot2svg(['newest_filt/mg49_s45_c' num2str(response) '_hinoise.svg']);
-  
-  subplot(312), ylim([0,200]);
-  subplot(313), ylim([0,200]);
-  pause;
-  plot2svg(['newest_filt/mg49_s45_c' num2str(response) '_hinoise_zoom.svg']);
-  close all;
-  
 end
-
-% % save BU1_S1_static bs ms
-% save BU1_S1_static bs
-
+% cd('../');
+% save(['MG49_Seizure45_' fit_method '_KS.mat'], 'all_KS')
