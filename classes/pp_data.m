@@ -3,19 +3,22 @@ classdef pp_data
 % pp_data: Point process data object
 % Part of the Point Process Toolbox by Grant Fiddyment
 % 
-% Constructor: d = pp_data(dn, t, Name, Labels)
+% Constructor: d = pp_data(dn, t, arguments)
 % 
-% dn: point process (i.e. event) data, being modeled
+% dn: point process (i.e. event) data, being modeled (channels x time)
 % t: time axis
 % 
-% --- OPTIONAL ----
-% Name: data set title 
-% Labels: identifier for each process
+% --------- OPTIONAL ----------
+% ARGUMENT    :   DESCRIPTION
+% ----------------------------
+% 'name'      :   data set title 
+% 'labels'    :   identifier for each process
+% 'marks'     :   continuous data associated with each process
 % 
 
   properties
-    Name % title of the data set
-    Labels % identifier for each pp
+    name % title of the data set
+    labels % identifier for each pp
     dn % point process data (rows = channels, cols = time)
     marks % auxillary data for each spike, if desired
     N_channels % number of channels (rows)
@@ -117,7 +120,6 @@ classdef pp_data
             plot(tmins,win_rate,PLOT_COLOR); hold on; grid on;
             
           end
-          save mg49_rate win_rate
           xlabel('time [s]')
           ylabel('rate [Hz]')
           title({ttl; plot_type});
