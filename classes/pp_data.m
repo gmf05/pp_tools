@@ -17,6 +17,7 @@ classdef pp_data
     Name % title of the data set
     Labels % identifier for each pp
     dn % point process data (rows = channels, cols = time)
+    marks % auxillary data for each spike, if desired
     N_channels % number of channels (rows)
     t % time axis
     dt % time resolution
@@ -25,7 +26,7 @@ classdef pp_data
 
   methods
     % Constructor
-    function obj = pp_data(dn,t,Name,Labels)
+    function obj = pp_data(dn,t,varargin)
       
       obj.dn = dn;
       obj.N_channels = size(dn,1);
@@ -33,10 +34,14 @@ classdef pp_data
       if nargin<2, obj.t = 1:T;
       else obj.t = t; end
       obj.dt = obj.t(2) - obj.t(1);
-      if nargin<3, Name = ''; end
-      if nargin<4, Labels = {}; end
-      obj.Name = Name;
-      obj.Labels = Labels;
+      
+      %
+      % TO DO: parse varargin for auxillary data: marks, labels, etc
+      %
+      if nargin<3, varargin{3} = ''; end
+      if nargin<4, varargin{4} = {}; end
+      obj.Name = varargin{3};
+      obj.Labels = varargin{4};
     end
     
     function obj = refresh(obj)

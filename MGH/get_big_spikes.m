@@ -66,8 +66,9 @@ function data = get_big_spikes(patient_name,seizure_name,data_type)
     for n = 1:N_channels
       if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
       [spkind,amp] = hilbertspike(d(n,:),thresh,MIN_REFRACT);
-      spkind = spkind(find(diff(amp)<0)+1);
+%       spkind = spkind(find(diff(amp)<0)+1);
       spikes{n} = t(spkind);
+      amps{n} = amp;
       dn(n,spkind) = 1;
     end
     
