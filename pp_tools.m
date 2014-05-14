@@ -21,11 +21,10 @@ DO_MASK = true;
 
 % ============== MGH specific variables, paths ===================
 % (1) where data is found -- hardcode if desired
-global DATA_DIR; DATA_DIR = getenv('DATA'); addpath(DATA_DIR);
+global DATA; DATA = getenv('DATA'); addpath(DATA);
 
 % (2) parameters for spike-finding
-global SPIKE_THRESH_ECOG SPIKE_THRESH_LFP SPIKE_THRESH_MUA ...
- MIN_REFRACT
+global SPIKE_THRESH_ECOG SPIKE_THRESH_LFP SPIKE_THRESH_MUA MIN_REFRACT
 SPIKE_THRESH_ECOG = 0.8;
 % SPIKE_THRESH_LFP = 0.4;
 SPIKE_THRESH_LFP = 3;

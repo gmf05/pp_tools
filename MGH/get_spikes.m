@@ -1,6 +1,6 @@
 function data = get_spikes(patient_name,seizure_name,data_type)
   
-  global DATA_DIR
+  global DATA
   global MIN_REFRACT
   global SPIKE_THRESH_EEG
   global SPIKE_THRESH_ECOG
@@ -19,60 +19,81 @@ function data = get_spikes(patient_name,seizure_name,data_type)
   end
   
   Name = [patient_name '_' seizure_name '_' data_type '_pp_thresh' num2str(thresh)];  
-  pp_filename = [DATA_DIR '/' patient_name '/' Name '.mat'];
+  pp_filename = [DATA '/' patient_name '/' Name '.mat'];
+  spikes_filename = [DATA '/' patient_name '/' Name '_spikes.mat'];
+  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
   
   if exist(pp_filename,'file')
     fprintf(['Loaded ' patient_name ' ' seizure_name ' @ thresh=' num2str(thresh) '\n']);
     load(pp_filename)
-  else
-    fprintf(['Cannot find spikes for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
-    fprintf('Loading raw data...\n');
-    load([DATA_DIR '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
-    switch data_type
-      case 'EEG'
-        szX = sz.EEG;
-        t = sz.ECoG.Time;
-      case 'ECoG'
-        szX = sz.ECoG;
-        t = sz.ECoG.Time;
-      case 'LFP'
-        szX = sz.LFP;
-        t = sz.LFP.Time;
-      case 'MUA'
-        sz.X = sz.LFP;
-        t = sz.LFP.Time;
+  else    
+    if exist(spikes_filename, 'file')
+      fprintf(['Cannot find point process objects for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
+      fprintf('Loading spike times...');
+      load(spikes_filename)
+      fprintf('Done!\n');
+    else
+      fprintf(['Cannot find spikes for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
+      if exist(filtered_filename,'file')        
+        fprintf('Loading processed data...');
+        
+        fprintf('Done!\n');
+      else
+        fprintf('Cannot find processed data.\n');
+        fprintf('Loading raw data...\n');
+        load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
+        fprintf('Done!\n');
+        
+        switch data_type
+          case 'EEG'
+            szX = sz.EEG;
+            t = sz.ECoG.Time;
+          case 'ECoG'
+            szX = sz.ECoG;
+            t = sz.ECoG.Time;
+          case 'LFP'
+            szX = sz.LFP;
+            t = sz.LFP.Time;
+          case 'MUA'
+            sz.X = sz.LFP;
+            t = sz.LFP.Time;
+        end
+
+        fprintf('Preprocessing...');
+        szX.Onset = sz.Onset; szX.Offset = sz.Offset;
+        d = szX.Data;
+        N_channels = size(d,2);
+        spikes = cell(1,N_channels);
+        start_ind = getclosest(t,szX.Onset);
+        end_ind = getclosest(t,t(end)-szX.Offset);
+        t = t(start_ind:end_ind) - t(start_ind);
+        d = d(start_ind:end_ind,:);
+        d = preprocessing(d, data_type);
+        d = d'; % want channel x time
+        save(filtered_name,'d','t','N_channels');
+        fprintf(['Done!\n']);        
+      end
+
+      % get and save spikes
+      fprintf('Finding spikes...\n');
+      for n = 1:N_channels
+        if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
+        spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);
+        spikes{n} = t(spkind);
+      end
+
+      fprintf('Done!\nSaving spikes...');
+      save(spikes_filename,'spikes','amps','-v7.3');
+      fprintf('Done!\n');
+    end
+  
+    % create raster plot
+    dn = 0*d;    
+    for n = 1:N_channels
+      spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);      
+      dn(n,spkind) = 1;
     end
     
-    fprintf('Done!\nPreprocessing...\n');
-    szX.Onset = sz.Onset; szX.Offset = sz.Offset;
-    d = szX.Data;
-    NT = size(d,1);
-    N_channels = size(d,2);
-    Fs = round(szX.SamplingRate);
-    dt = 1/Fs;
-    fNQ = Fs/2;
-    
-    spikes = cell(1,N_channels);
-    start_ind = getclosest(t,szX.Onset);
-    end_ind = getclosest(t,t(end)-szX.Offset);
-    t = t(start_ind:end_ind) - t(start_ind);
-    d = d(start_ind:end_ind,:);
-    d = preprocessing(d, data_type);
-    d = d'; % get in row = channel form
-    save([DATA_DIR '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered'],'d','t');
-    dn = 0*d;
-    fprintf(['Done!\nFinding spikes...\n']);
-    
-    for n = 1:N_channels
-      if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-      spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);
-      spikes{n} = t(spkind);
-      dn(n,spkind) = 1;
-    end 
-    fprintf(['Done!\nSaving spikes...']);
-    save([Name '_spikes.mat'],'spikes','-v7.3');
-    fprintf('Done!\n');
-
     % remove any channels with very large/small spike counts
     cumspks = sum(dn'); % all spike counts
     cleantemp = removeoutliers(cumspks); % outliers removed
@@ -97,20 +118,21 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     fprintf(['Removed ' num2str(N_out) ' ' data_type ...
       ' channels with too many/few spikes.\n']);
     
+    % save point process object
     data = pp_data(dn,t,Name,Labels);
     switch data_type
       case {'ECoG', 'EEG'}
-        fprintf(['No downsampling.\n']);        
+        fprintf('No downsampling.\n');
       case 'LFP', 
-        fprintf(['Trying to downsample by 32x\n']);
-        try, data = data.downsample(32); end;
+        fprintf('Trying to downsample by 32x\n');
+        try data = data.downsample(32); end;
       case 'MUA'
-        fprintf(['Need to figure out whether to downsample here\n']);
+        fprintf('Need to figure out whether to downsample here\n');
     end
-    
-    fprintf(['Saving point process data object...']);
+    fprintf('Saving point process data object...');
     save(pp_filename, '-v7.3','data');
-    fprintf(['Done!\n\n']);
+    fprintf('Done!\n\n');
+  end
 end
 
 function d_post = preprocessing(d_pre, data_type)
@@ -198,6 +220,3 @@ switch data_type
   %-------------------------- filtered EEG
 end
 end
-
-end
-
