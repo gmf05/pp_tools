@@ -1,11 +1,7 @@
 function data = get_spikes(patient_name,seizure_name,data_type)
   
-  global DATA
-  global MIN_REFRACT
-  global SPIKE_THRESH_EEG
-  global SPIKE_THRESH_ECOG
-  global SPIKE_THRESH_LFP
-  global SPIKE_THRESH_MUA
+  global DATA MIN_REFRACT SPIKE_THRESH_EEG SPIKE_THRESH_ECOG ...
+    SPIKE_THRESH_LFP SPIKE_THRESH_MUA
   
   switch data_type
     case 'EEG'
