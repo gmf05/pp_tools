@@ -19,17 +19,19 @@ function data = get_spikes(patient_name,seizure_name,data_type)
   spikes_filename = [DATA '/' patient_name '/' Name '_spikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
   
+  spike_request = [patient_name ' ' seizure_name ' @ thresh=' num2str(thresh)];
+  
   if exist(pp_filename,'file')
-    fprintf(['Loaded ' patient_name ' ' seizure_name ' @ thresh=' num2str(thresh) '\n']);
+    fprintf(['Loaded ' spike_request '\n']);
     load(pp_filename)
   else    
     if exist(spikes_filename, 'file')
-      fprintf(['Cannot find point process objects for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
+      fprintf(['Cannot find point process objects for ' spike_request '\n']);
       fprintf('Loading spike times...');
       load(spikes_filename)
       fprintf('Done!\n');
     else
-      fprintf(['Cannot find spikes for ' patient_name ' ' seizure_name ' @ thresh = ' num2str(thresh) '\n']);
+      fprintf(['Cannot find spikes for ' spike_request '\n']);
       if exist(filtered_filename,'file')        
         fprintf('Loading processed data...');
         
@@ -68,7 +70,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
         d = d(start_ind:end_ind,:);
         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_name,'d','t','N_channels');
+        save(filtered_filename,'d','t','N_channels');
         fprintf(['Done!\n']);        
       end
 
