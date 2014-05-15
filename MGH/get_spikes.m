@@ -76,7 +76,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
 
       % get and save spikes
       fprintf('Finding spikes...\n');
-      N_channels = length(spikes);
+      N_channels = size(d,2);
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
         spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);
