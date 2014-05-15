@@ -70,7 +70,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
         d = d(start_ind:end_ind,:);
         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_filename,'d','t','N_channels');
+        save(filtered_filename,'-v7.3','d','t','N_channels');
         fprintf(['Done!\n']);        
       end
 
@@ -83,7 +83,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
       end
 
       fprintf('Done!\nSaving spikes...');
-      save(spikes_filename,'spikes','amps','-v7.3');
+      save(spikes_filename,'-v7.3','spikes','amps');
       fprintf('Done!\n');
     end
   
