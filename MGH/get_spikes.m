@@ -95,7 +95,7 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     end
     
     % remove any channels with very large/small spike counts
-    cumspks = sum(dn'); % all spike counts
+    cumspks = sum(dn,2); % all spike counts
     cleantemp = removeoutliers(cumspks); % outliers removed
     out = setdiff(cumspks, cleantemp); % set of outliers
     N_out = length(out);
