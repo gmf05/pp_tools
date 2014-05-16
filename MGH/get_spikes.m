@@ -1,37 +1,25 @@
-function data = get_spikes(patient_name,seizure_name,data_type)
+function data = get_spikes(patient_name,seizure_name,data_type,thresh)
   
-  global DATA MIN_REFRACT SPIKE_THRESH_EEG SPIKE_THRESH_ECOG ...
-    SPIKE_THRESH_LFP SPIKE_THRESH_MUA
-  
-  switch data_type
-    case 'EEG'
-      thresh = SPIKE_THRESH_EEG;
-    case 'ECoG'
-      thresh = SPIKE_THRESH_ECOG;
-    case 'LFP'
-      thresh = SPIKE_THRESH_LFP;
-    case 'MUA'
-      thresh = SPIKE_THRESH_MUA;
-  end
-  
-  Name = [patient_name '_' seizure_name '_' data_type '_pp_thresh' num2str(thresh)];  
-  pp_filename = [DATA '/' patient_name '/' Name '.mat'];
-  spikes_filename = [DATA '/' patient_name '/' Name '_spikes.mat'];
+  global DATA; min_refract = 1;
+ 
+  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
+  pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
+%   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
   
-  spike_request = [patient_name ' ' seizure_name ' @ thresh=' num2str(thresh)];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
   
   if exist(pp_filename,'file')
-    fprintf(['Loaded ' spike_request '\n']);
+    fprintf(['Loaded ' data_name0 '\n']);
     load(pp_filename)
   else    
-    if exist(spikes_filename, 'file')
-      fprintf(['Cannot find point process objects for ' spike_request '\n']);
-      fprintf('Loading spike times...');
-      load(spikes_filename)
-      fprintf('Done!\n');
-    else
-      fprintf(['Cannot find spikes for ' spike_request '\n']);
+%     if exist(spikes_filename, 'file')
+      fprintf(['Cannot find point process objects for ' data_name0 '\n']);
+%       fprintf('Loading spike times...');
+%       load(spikes_filename)
+%       fprintf('Done!\n');
+%     else
+%       fprintf(['Cannot find spikes for ' spike_request '\n']);
       if exist(filtered_filename,'file')        
         fprintf('Loading processed data...');
         
@@ -62,45 +50,40 @@ function data = get_spikes(patient_name,seizure_name,data_type)
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
         d = szX.Data;
-        N_channels = size(d,2);
-        spikes = cell(1,N_channels);
         start_ind = getclosest(t,szX.Onset);
         end_ind = getclosest(t,t(end)-szX.Offset);
         t = t(start_ind:end_ind) - t(start_ind);
         d = d(start_ind:end_ind,:);
         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_filename,'-v7.3','d','t','N_channels');
-        fprintf(['Done!\n']);        
+        save(filtered_filename,'-v7.3','d','t');
+        fprintf('Done!\n');
       end
 
-      % get and save spikes
-      fprintf('Finding spikes...\n');
-      N_channels = size(d,2);
+      % get and save spikes, create raster      
+      fprintf('Finding spikes...\n');      
+      dn = 0*d;
+      N_channels = size(d,1);
+      spikes = cell(1,N_channels);
+      amps = cell(1,N_channels);
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-        spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);
+        [spkind, amp] = hilbertspike(d(n,:),thresh,min_refract);
         spikes{n} = t(spkind);
+        dn(n, spkind) = 1;
+        amps{n} = amp;
       end
 
-      fprintf('Done!\nSaving spikes...');
-      save(spikes_filename,'-v7.3','spikes','amps');
-      fprintf('Done!\n');
-    end
-  
-    % create raster plot
-    dn = 0*d;    
-    for n = 1:N_channels
-      spkind = hilbertspike(d(n,:),thresh,MIN_REFRACT);      
-      dn(n,spkind) = 1;
-    end
-    
+%       fprintf('Done!\nSaving spikes...');
+%       save(spikes_filename,'-v7.3','spikes','amps');
+%       fprintf('Done!\n');
+%     end
+
     % remove any channels with very large/small spike counts
     cumspks = sum(dn,2); % all spike counts
     cleantemp = removeoutliers(cumspks); % outliers removed
     out = setdiff(cumspks, cleantemp); % set of outliers
     N_out = length(out);
-
     out_ind = [];
     count = 1;
     for i = 1:N_out
@@ -112,15 +95,19 @@ function data = get_spikes(patient_name,seizure_name,data_type)
     good_ind = setdiff(1:N_channels,out_ind);
     dn = dn(good_ind,:);
     if isequal(class(szX.Labels),'char')
-      Labels = str2cell(szX.Labels(good_ind,:));
+      labels = str2cell(szX.Labels(good_ind,:));
     elseif isequal(class(szX.Labels),'cell')
-      Labels = {szX.Labels{good_ind}};
+      labels = {szX.Labels{good_ind}};
     end
     fprintf(['Removed ' num2str(N_out) ' ' data_type ...
       ' channels with too many/few spikes.\n']);
     
     % save point process object
-    data = pp_data(dn,t,Name,Labels);
+    data = pp_data(dn,t);
+    data.labels = labels;
+    data.name = data_name;
+    data.marks = amps;
+    
     switch data_type
       case {'ECoG', 'EEG'}
         fprintf('No downsampling.\n');

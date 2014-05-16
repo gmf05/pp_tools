@@ -15,9 +15,9 @@ classdef Neuroport
     obj.N_electrodes = 96;
     
     % get coordinate remapping
-    global DATA_DIR
+    global DATA
     patient = obj.patient;
-    num= xlsread([DATA_DIR '/' patient '/' patient '_lfp.xls']);
+    num= xlsread([DATA '/' patient '/' patient '_lfp.xls']);
     arrayMap = NaN(10,10);
     for n = 1:96;
       arrayMap(num(n,1)+1,num(n,2)+1) = n;
@@ -118,17 +118,27 @@ classdef Neuroport
 %         dy = dirs(:,2);
 %     end
 
+%   transformation from b's to (x,y)
+%   b = (bUp, bDown, bLeft, bRight)
+%   y = bUp - bDown
+%   x = bRight - bLeft
+%   (y,x) = X*b
+    X = [1 -1 0 0; 0 0 -1 1];
+  
     for n = 1:obj.N_electrodes
-      dir_n = [0 1]*dirs(n,1) + [0 -1]*dirs(n,2) + [-1 0]*dirs(n,3) + [1 0]*dirs(n,4);
-      plot(obj.coord(n,1) + [-dir_n(1) 0], obj.coord(n,2) + [-dir_n(2) 0], 'b');
-%       plot(obj.coord(n,1) + [-dx(n) 0], obj.coord(n,2) + [-dy(n) 0], 'b');
+      t = X*dirs(n,:)';
+      t
+      plot(obj.coord(n,1) + [-t(1) 0], obj.coord(n,2) + [-t(2) 0], 'b');
     end
       
     
     
     
-  end
-    
+   end
+   
+   
+  
+  
     
   
   end
