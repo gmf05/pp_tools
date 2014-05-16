@@ -54,9 +54,11 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         end_ind = getclosest(t,t(end)-szX.Offset);
         t = t(start_ind:end_ind) - t(start_ind);
         d = d(start_ind:end_ind,:);
-        d = preprocessing(d, data_type);
+        % printing progress
+        for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end
+%         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_filename,'-v7.3','d','t');
+        save(filtered_filename,'-v7.3','d','t')par;
         fprintf('Done!\n');
       end
 
