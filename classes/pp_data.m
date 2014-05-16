@@ -41,10 +41,13 @@ classdef pp_data
       %
       % TO DO: parse varargin for auxillary data: marks, labels, etc
       %
-      if nargin<3, varargin{3} = ''; end
-      if nargin<4, varargin{4} = {}; end
-      obj.Name = varargin{3};
-      obj.Labels = varargin{4};
+      for n = 1:2:length(varargin)
+        switch varargin{n}
+          case 'name', obj.name = varargin{n+1};
+          case 'labels', obj.labels = varargin{n+1};
+          case 'marks',obj.marks = varargin{n+1};
+        end
+      end            
     end
     
     function obj = refresh(obj)
