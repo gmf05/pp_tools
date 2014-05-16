@@ -22,7 +22,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
 %       fprintf(['Cannot find spikes for ' spike_request '\n']);
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
-        
+        load(filtered_filename);
         fprintf('Done!\n');
       else
         fprintf('Cannot find processed data.\n');
@@ -106,7 +106,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     
     % save point process object
     data = pp_data(dn,t);
-    data2 = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
+    data2 = pp_data(dn,t,'name',data_name,'labels',labels,'marks',amps);
     data.labels = labels;
     data.name = data_name;
     data.marks = amps;
