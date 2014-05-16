@@ -14,7 +14,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     load(pp_filename)
   else    
 %     if exist(spikes_filename, 'file')
-      fprintf(['Cannot find point process objects for ' data_name0 '\n']);
+      fprintf(['Cannot find point process object for ' data_name0 '\n']);
 %       fprintf('Loading spike times...');
 %       load(spikes_filename)
 %       fprintf('Done!\n');
@@ -47,6 +47,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
 
         fprintf('Preprocessing...');
         szX.Onset = sz.Onset; szX.Offset = sz.Offset;
+        labels = szX.Labels;
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
         d = szX.Data;
@@ -54,11 +55,12 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         end_ind = getclosest(t,t(end)-szX.Offset);
         t = t(start_ind:end_ind) - t(start_ind);
         d = d(start_ind:end_ind,:);
+        
         % printing progress
         for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end
 %         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_filename,'-v7.3','d','t');
+        save(filtered_filename,'-v7.3','d','t','labels');
         fprintf('Done!\n');
       end
 
@@ -96,10 +98,10 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     end
     good_ind = setdiff(1:N_channels,out_ind);
     dn = dn(good_ind,:);
-    if isequal(class(szX.Labels),'char')
-      labels = str2cell(szX.Labels(good_ind,:));
-    elseif isequal(class(szX.Labels),'cell')
-      labels = {szX.Labels{good_ind}};
+    if isequal(class(labels),'char')
+      labels = str2cell(labels(good_ind,:));
+    elseif isequal(class(labels),'cell')
+      labels = {labels{good_ind}};
     end
     fprintf(['Removed ' num2str(N_out) ' ' data_type ...
       ' channels with too many/few spikes.\n']);
