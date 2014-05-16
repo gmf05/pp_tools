@@ -2,24 +2,23 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
   
   global DATA; min_refract = 1;
  
-  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh) '_pp'];
-  pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
-  spikes_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_name '_thresh' num2str(thresh) '_spikes.mat'];
-  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];
-  
+  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
   data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
+  pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
+  spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
+  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
   
-%   if exist(pp_filename,'file')
-%     fprintf(['Loaded ' data_name0 '\n']);
-%     load(pp_filename)
-%   else    
+  if exist(pp_filename,'file')
+    fprintf(['Loaded ' data_name0 '\n']);
+    load(pp_filename)
+  else    
     if exist(spikes_filename, 'file')
-%       fprintf(['Cannot find point process object for ' data_name0 '\n']);
+      fprintf(['Cannot find point process object for ' data_name0 '\n']);
       fprintf('Loading spike times...');
       load(spikes_filename)
       fprintf('Done!\n');
     else
-      fprintf(['Cannot find spikes for ' data_name '\n']);
+      fprintf(['Cannot find spikes for ' data_name0 '\n']);
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         load(filtered_filename);
@@ -82,7 +81,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     end
 
     % remove any channels with very large/small spike counts
-    dn = zeros(length(spikes),length(t));
+    N_channels = length(spikes);
+    dn = zeros(N_channels,length(t));
     for n = 1:length(spikes), dn(n,:) = hist(spikes{n},t); end
     cumspks = sum(dn,2); % all spike counts
     cleantemp = removeoutliers(cumspks); % outliers removed
@@ -123,10 +123,10 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         fprintf('Need to figure out whether to downsample here\n');
     end
     
-%     fprintf('Saving point process data object...');
-%     save(pp_filename, '-v7.3','data','data2');
-%     fprintf('Done!\n\n');
-%   end
+    fprintf('Saving point process data object...');
+    save(pp_filename, '-v7.3','data');
+    fprintf('Done!\n\n');
+  end
 
 function d_post = preprocessing(d_pre, data_type)
 
