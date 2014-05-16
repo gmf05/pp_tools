@@ -2,10 +2,10 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
   
   global DATA; min_refract = 1;
  
-  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
+  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh) '_pp'];
   pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
 %   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
-  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
+  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];
   
   data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
   
@@ -20,7 +20,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
 %       fprintf('Done!\n');
 %     else
 %       fprintf(['Cannot find spikes for ' spike_request '\n']);
-      if exist(filtered_filename,'file')        
+      if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         
         fprintf('Done!\n');
@@ -104,6 +104,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     
     % save point process object
     data = pp_data(dn,t);
+    data2 = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
     data.labels = labels;
     data.name = data_name;
     data.marks = amps;
@@ -118,7 +119,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         fprintf('Need to figure out whether to downsample here\n');
     end
     fprintf('Saving point process data object...');
-    save(pp_filename, '-v7.3','data');
+    save(pp_filename, '-v7.3','data','data2');
     fprintf('Done!\n\n');
   end
 
