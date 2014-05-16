@@ -126,7 +126,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
 %     fprintf('Saving point process data object...');
 %     save(pp_filename, '-v7.3','data','data2');
 %     fprintf('Done!\n\n');
-  end
+%   end
 
 function d_post = preprocessing(d_pre, data_type)
 
