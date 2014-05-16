@@ -19,7 +19,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
       load(spikes_filename)
       fprintf('Done!\n');
     else
-      fprintf(['Cannot find spikes for ' spike_request '\n']);
+      fprintf(['Cannot find spikes for ' data_name '\n']);
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         load(filtered_filename);
