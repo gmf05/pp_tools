@@ -51,7 +51,7 @@ classdef pp_data
     end
     
     function obj = refresh(obj)
-      obj = pp_data(obj.dn,obj.t,obj.Name,obj.Labels);
+      obj = pp_data(obj.dn,obj.t,obj.name,obj.Labels);
     end
     
     % Returns a data object with the specified channels
@@ -108,7 +108,7 @@ classdef pp_data
       %%%
       win_bins = floor(params.window(1) / obj.dt);
       dW_bins = floor(params.window(2) / obj.dt);      
-      ttl = regexprep(obj.Name,'_',' ');
+      ttl = regexprep(obj.name,'_',' ');
       ttl = regexprep(ttl, ' pp thresh', '');
       
       win_rate = zeros(obj.N_channels,N_windows);
