@@ -58,7 +58,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end
 %         d = preprocessing(d, data_type);
         d = d'; % want channel x time
-        save(filtered_filename,'-v7.3','d','t')par;
+        save(filtered_filename,'-v7.3','d','t');
         fprintf('Done!\n');
       end
 
