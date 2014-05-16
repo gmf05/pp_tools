@@ -4,22 +4,22 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
  
   data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh) '_pp'];
   pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
-%   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
+  spikes_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_name '_thresh' num2str(thresh) '_spikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];
   
   data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
   
-  if exist(pp_filename,'file')
-    fprintf(['Loaded ' data_name0 '\n']);
-    load(pp_filename)
-  else    
-%     if exist(spikes_filename, 'file')
-      fprintf(['Cannot find point process object for ' data_name0 '\n']);
-%       fprintf('Loading spike times...');
-%       load(spikes_filename)
-%       fprintf('Done!\n');
-%     else
-%       fprintf(['Cannot find spikes for ' spike_request '\n']);
+%   if exist(pp_filename,'file')
+%     fprintf(['Loaded ' data_name0 '\n']);
+%     load(pp_filename)
+%   else    
+    if exist(spikes_filename, 'file')
+%       fprintf(['Cannot find point process object for ' data_name0 '\n']);
+      fprintf('Loading spike times...');
+      load(spikes_filename)
+      fprintf('Done!\n');
+    else
+      fprintf(['Cannot find spikes for ' spike_request '\n']);
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         load(filtered_filename);
@@ -65,8 +65,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
       end
 
       % get and save spikes, create raster      
-      fprintf('Finding spikes...\n');      
-      dn = 0*d;
+      fprintf('Finding spikes...\n');
       N_channels = size(d,1);
       spikes = cell(1,N_channels);
       amps = cell(1,N_channels);
@@ -74,16 +73,17 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
         [spkind, amp] = hilbertspike(d(n,:),thresh,min_refract);
         spikes{n} = t(spkind);
-        dn(n, spkind) = 1;
         amps{n} = amp;
       end
 
-%       fprintf('Done!\nSaving spikes...');
-%       save(spikes_filename,'-v7.3','spikes','amps');
-%       fprintf('Done!\n');
-%     end
+      fprintf('Done!\nSaving spikes...');
+      save(spikes_filename,'-v7.3','spikes','amps','labels','min_refract','t');
+      fprintf('Done!\n');
+    end
 
     % remove any channels with very large/small spike counts
+    dn = zeros(length(spikes),length(t));
+    for n = 1:length(spikes), dn(n,:) = hist(spikes{n},t); end
     cumspks = sum(dn,2); % all spike counts
     cleantemp = removeoutliers(cumspks); % outliers removed
     out = setdiff(cumspks, cleantemp); % set of outliers
@@ -107,8 +107,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
       ' channels with too many/few spikes.\n']);
     
     % save point process object
-    data = pp_data(dn,t);
-    data2 = pp_data(dn,t,'name',data_name,'labels',labels,'marks',amps);
+%     data = pp_data(dn,t);
+    data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',amps);
     data.labels = labels;
     data.name = data_name;
     data.marks = amps;
@@ -122,9 +122,10 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
       case 'MUA'
         fprintf('Need to figure out whether to downsample here\n');
     end
-    fprintf('Saving point process data object...');
-    save(pp_filename, '-v7.3','data','data2');
-    fprintf('Done!\n\n');
+    
+%     fprintf('Saving point process data object...');
+%     save(pp_filename, '-v7.3','data','data2');
+%     fprintf('Done!\n\n');
   end
 
 function d_post = preprocessing(d_pre, data_type)
