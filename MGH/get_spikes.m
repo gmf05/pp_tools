@@ -103,6 +103,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
     elseif isequal(class(labels),'cell')
       labels = {labels{good_ind}};
     end
+    amps = {amps{goodind}};
     fprintf(['Removed ' num2str(N_out) ' ' data_type ...
       ' channels with too many/few spikes.\n']);
     
