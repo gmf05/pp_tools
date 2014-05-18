@@ -4,7 +4,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
  
   data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
   data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
-  pp_filename = [DATA '/' patient_name '/' data_name '.mat'];
+  pp_filename = [DATA '/' patient_name '/' data_name '_pp.mat'];
   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
   
