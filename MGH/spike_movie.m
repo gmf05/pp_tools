@@ -1,67 +1,61 @@
-pat = 'MG63';
-sz = 'S3';
+patient_name = 'MG49';
+seizure_name = 'Seizure36';
+data_type = 'LFP';
 doSave = false;
 if doSave
-  VW = VideoWriter([pat '_' sz '_late.avi']);
+  VW = VideoWriter([patient_name '_' seizure_nam '_late.avi']);
   VW.open();
 end
 
+N = Neuroport(patient_name);
+
 %%
-% % % % load /media/Shared/GMF/Documents/BostonU/Research/Data/MG49/MG49_Seizure45_LFP_filtered
-% % % load /media/Shared/GMF/Documents/BostonU/Research/Data/MG49/MG49_Seizure36_LFP_filtered
-% load /projectnb/ecog/Data/MG49/MG49_Seizure36_LFP_filtered
-% % % load /media/Shared/GMF/Documents/BostonU/Research/Data/MG49/MG49_Seizure45_LFP_ECoG_EEG
-% % % d_post = sz.LFP.Data;
-% % % for i = 1:size(d_post,2)
-% % %   d_post(:,i) = zscore(d_post(:,i));
-% % % end
-% % % time = (1:length(d_post))/3e4 - 20;
+data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
+load([data_name '_filtered']); d_post = d'; time = t;
 
-N = Neuroport(pat);
 
+%%
 % tmin = 120; tmax = 122;
 % tmin = 115; tmax = 150;
-tmin = 80; tmax = 90;
+% tmin = 80; tmax = 90;
+tmin = 115; tmax = 125;
 trange = getclosest(time,tmin):getclosest(time,tmax);
 time_W = time(trange);
 Ws = d_post(trange,:)';
 T = size(Ws,2);
 
-% spike_dn = zeros(N.N_electrodes,T);
-% for n = 1:N.N_electrodes
-%   ind = hilbertspike(Ws(n,:),1,1);
-%   spike_dn(n,ind) = 1;
-% end
-% 
-% Ws = -Ws;
-% 
-% % %%
-% % T = size(d_post,1);
-% % spike_dn = zeros(N.N_electrodes,T);
-% % for n = 1:N.N_electrodes
-% % % for n = 1
-% %   n
-% %   ind = hilbertspike(d_post(:,n),1,1);
-% %   spike_dn(n,ind) = 1;
-% % end
-% % %%
-
-%%
+spike_dn = zeros(N.N_electrodes,T);
 for n = 1:N.N_electrodes
-% for n = [41 79 82]
-  plot(time,d_post(:,n)); hold on;
-  spike_ind = find(spike_dn(n,:));
-  plot(time_W(spike_ind), Ws(n,spike_ind),'ro');
-  pause; hold off;
+  ind = hilbertspike(Ws(n,:),1,1);
+  spike_dn(n,ind) = 1;
 end
 
+% %%
+% T = size(d_post,1);
+% spike_dn = zeros(N.N_electrodes,T);
+% for n = 1:N.N_electrodes
+% % for n = 1
+%   n
+% %   ind = hilbertspike(d_post(:,n),1,1);
+%   spike_dn(n,ind) = 1;
+% end
+% %%
 
-%%
+% %%
+% for n = 1:N.N_electrodes
+% % for n = [41 79 82]
+%   plot(time,d_post(:,n)); hold on;
+%   spike_ind = find(spike_dn(n,:));
+%   plot(time_W(spike_ind), Ws(n,spike_ind),'ro');
+%   pause; hold off;
+% end
+
+% %%
 % mn = min(min(Ws));
 % mx = max(max(Ws));
 % cax = [mn mx];
 % cax = [-4 4];
-cax = [6 -6];
+cax = [4 -6];
 C = cax(2)-cax(1);
 R = 0.5;
 theta = 0:0.01:2*pi;
@@ -73,14 +67,16 @@ set(gca,'YTick',[]);
 colormap('default'), color_RGB = colormap();
 
 
-% tmn = 84; tmx = 86.5;
+% tmn = 105; tmx = 110;
 tmn = time_W(1); tmx = time_W(end);
-response_list = [33, 42, 84];
+% response_list = [33, 42, 84];
+response_list = [1 1 1];
 % response_list = [41 76 82];
-for i = 1:3
+for i = 1
   r = response_list(i);
-%   spike_ind = find(spike_dn(r,:));
-  subplot(3,2,2*i); plot(time_W,Ws(r,:)); %hold on, plot(time_W(spike_ind), Ws(r,spike_ind),'rx');  xlim([tmn,tmx]); ylim([-8,8]);
+  subplot(3,2,2*i); plot(time_W,Ws(r,:));
+  spike_ind = find(spike_dn(r,:));
+  hold on, plot(time_W(spike_ind), Ws(r,spike_ind),'rx');  xlim([tmn,tmx]); ylim([-8,8]);
 end
 
 dW = 1;
