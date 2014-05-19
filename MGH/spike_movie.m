@@ -14,9 +14,9 @@ end
 
 
 %%
-tmin = 115; tmax = 125;
+% tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
-% tmin = 115; tmax = 150;
+tmin = 115; tmax = 150;
 % tmin = 80; tmax = 90;
 
 trange = getclosest(time,tmin):getclosest(time,tmax);
@@ -33,6 +33,8 @@ for n = 1:N.N_electrodes
   spike_dn(n,ind(i)) = 1;
 %   amps{n} = amp;
 end
+
+d = pp_data(spike_dn,time_W);
 
 %%
 % i = find(diff(amp)<0);

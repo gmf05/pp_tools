@@ -71,7 +71,7 @@ classdef pp_model
       N_cov_types = length(p.covariate_names);
       obj.y = d.dn(p.response,:)'; % response variable      
       
-      % make design matrixglmf
+      % make design matrix
       N_cov = p.covariate_ind{end}(end); % total # of covariates
       fs_update_ind = p.covariate_ind{1}+1:N_cov;
       obj.X = ones(d.T,N_cov);
