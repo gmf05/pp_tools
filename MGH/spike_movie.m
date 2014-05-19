@@ -1,36 +1,52 @@
 patient_name = 'MG49';
 seizure_name = 'Seizure36';
 data_type = 'LFP';
+thresh = 1;
+N = Neuroport(patient_name);
+data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
+load([data_name '_filtered']); d_post = d'; time = t;
+
 doSave = false;
 if doSave
   VW = VideoWriter([patient_name '_' seizure_nam '_late.avi']);
   VW.open();
 end
 
-N = Neuroport(patient_name);
 
 %%
-data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
-load([data_name '_filtered']); d_post = d'; time = t;
-
-
-%%
+tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
 % tmin = 115; tmax = 150;
 % tmin = 80; tmax = 90;
-tmin = 115; tmax = 125;
+
 trange = getclosest(time,tmin):getclosest(time,tmax);
 time_W = time(trange);
 Ws = d_post(trange,:)';
 T = size(Ws,2);
-
+amps = cell(1,N.N_electrodes);
 spike_dn = zeros(N.N_electrodes,T);
 for n = 1:N.N_electrodes
-  ind = hilbertspike(Ws(n,:),1,1);
-  spike_dn(n,ind) = 1;
+% for n = [1]
+  [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
+  i = find(diff(amp)<0)+1;
+%   i = find(amp<mean(amp));
+  spike_dn(n,ind(i)) = 1;
+%   amps{n} = amp;
 end
 
-% %%
+%%
+% i = find(diff(amp)<0);
+% i = find(amp<mean(amp));
+
+figure
+plot(time_W,Ws(n,:)); hold on
+plot(time_W(ind),Ws(n,ind),'rx');
+plot(time_W(ind(i)),Ws(n,ind(i)),'ks');
+
+spike_dn = zeros(N.N_electrodes,T);
+spike_dn(1,ind(i)) = 1;
+
+%%
 % T = size(d_post,1);
 % spike_dn = zeros(N.N_electrodes,T);
 % for n = 1:N.N_electrodes
@@ -70,9 +86,9 @@ colormap('default'), color_RGB = colormap();
 % tmn = 105; tmx = 110;
 tmn = time_W(1); tmx = time_W(end);
 % response_list = [33, 42, 84];
-response_list = [1 1 1];
+response_list = [1 10 20];
 % response_list = [41 76 82];
-for i = 1
+for i = 1:3
   r = response_list(i);
   subplot(3,2,2*i); plot(time_W,Ws(r,:));
   spike_ind = find(spike_dn(r,:));
@@ -106,7 +122,7 @@ for t = dT+1:dT:T
 
   subplot(1,2,1);
   title(num2str(time_W(t)));
-  pause(0.002);
+  pause(0.02);
   hold off;
   
   if doSave

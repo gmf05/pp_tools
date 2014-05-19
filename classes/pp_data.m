@@ -108,8 +108,12 @@ classdef pp_data
       %%%
       win_bins = floor(params.window(1) / obj.dt);
       dW_bins = floor(params.window(2) / obj.dt);      
-      ttl = regexprep(obj.name,'_',' ');
-      ttl = regexprep(ttl, ' pp thresh', '');
+      if ~isempty(obj.name)
+        ttl = regexprep(obj.name,'_',' ');
+        ttl = regexprep(ttl, ' pp thresh', '');
+      else
+        ttl = '';
+      end
       
       win_rate = zeros(obj.N_channels,N_windows);
       switch plot_type

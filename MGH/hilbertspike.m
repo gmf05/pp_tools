@@ -31,7 +31,7 @@ function [spike_ind, amp] = hilbertspike(d0, threshold, min_refract)
 if nargin <3, min_refract = 1; end
 NT = length(d0);
 t_axis = (1:NT);
-window_span = 20;
+window_span = 0;
 h_transform=imag(hilbert(d0));      % "Phase information"
 h_spikes=[];                        % Empty array for time indices of spikes
 amp=[];
@@ -68,20 +68,23 @@ while k < min(length(max_ind), length(min_ind))
     % least `threshold`
     if h_transform(max_ind(k))-h_transform(min_ind(k)) >= threshold
             
-        % Two options for identifying the spike between max/min:
+        % Two options for identifying the spike between max/min:        
         % (1) Take time halfway between time of max and time of min
-        temp_ind = round((max_ind(k)+min_ind(k))/2);
+        % NOTE: this one is worse
+%         temp_ind = round((max_ind(k)+min_ind(k))/2);
         
-        % (2) Take time when voltage is halfway between max and min
-%         height = (h_transform(max_ind(k))+h_transform(min_ind(k)))/2;
-%         temp_ind = getclosest(h_transform(max_ind(k):min_ind(k)), height)+max_ind(k);
+        % (2) BETTER: Take time when voltage is halfway between max and min
+        height = (h_transform(max_ind(k))+h_transform(min_ind(k)))/2;
+        temp_ind = getclosest(h_transform(max_ind(k):min_ind(k)), height)+max_ind(k);
+
+        % Let times drift by at most window_span
         ws = min(temp_ind-1, window_span);
         win_on = temp_ind - ws;
         win_off = min(temp_ind+ws, NT);
         [~, temp_ind2] = min(d0(win_on:win_off));
         temp_ind = temp_ind-ws-1+temp_ind2;
-                
-        %If this spike is > min_refract away from last spike (OR this is the
+%                 
+%         %If this spike is > min_refract away from last spike (OR this is the
         %first spike), save spike time
         if isempty(h_spikes) || temp_ind - h_spikes(end) >= min_refract
             h_spikes = [h_spikes temp_ind];
