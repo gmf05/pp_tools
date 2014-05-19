@@ -60,8 +60,8 @@ classdef pp_data
       ind = intersect(1:obj.N_channels,ind);
       obj.dn = obj.dn(ind,:);
       obj.N_channels = size(obj.dn,1);   
-      if ~isempty(obj.Labels)
-        obj.Labels = {obj.Labels{ind}}; 
+      if ~isempty(obj.labels)
+        obj.labels = {obj.labels{ind}}; 
       end
     end
     
