@@ -16,9 +16,9 @@ end
 %%
 % tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
-tmin = 115; tmax = 150;
+tmin = 100; tmax = 130;
 % tmin = 80; tmax = 90;
-
+min_refract = 0.3*3e4;
 trange = getclosest(time,tmin):getclosest(time,tmax);
 time_W = time(trange);
 Ws = d_post(trange,:)';
@@ -26,11 +26,21 @@ T = size(Ws,2);
 amps = cell(1,N.N_electrodes);
 spike_dn = zeros(N.N_electrodes,T);
 for n = 1:N.N_electrodes
-% for n = [1]
+% for n = [1 10 20]
   [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
-  i = find(diff(amp)<0)+1;
+%   i = find(diff(amp)<0)+1;
 %   i = find(amp<mean(amp));
-  spike_dn(n,ind(i)) = 1;
+
+  [sortAmp,sortI] = sort(amp);
+  dropI = [];
+  for j = 2:length(amp)
+    if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
+      dropI = [dropI sortI(j)];
+    end
+  end
+  ind(dropI) = [];
+
+  spike_dn(n,ind) = 1;
 %   amps{n} = amp;
 end
 
@@ -43,10 +53,10 @@ d = pp_data(spike_dn,time_W);
 figure
 plot(time_W,Ws(n,:)); hold on
 plot(time_W(ind),Ws(n,ind),'rx');
-plot(time_W(ind(i)),Ws(n,ind(i)),'ks');
+% plot(time_W(ind(i)),Ws(n,ind(i)),'ks');
 
-spike_dn = zeros(N.N_electrodes,T);
-spike_dn(1,ind(i)) = 1;
+% spike_dn = zeros(N.N_electrodes,T);
+% spike_dn(1,ind(i)) = 1;
 
 %%
 % T = size(d_post,1);
@@ -124,7 +134,7 @@ for t = dT+1:dT:T
 
   subplot(1,2,1);
   title(num2str(time_W(t)));
-  pause(0.02);
+  pause(0.005);
   hold off;
   
   if doSave

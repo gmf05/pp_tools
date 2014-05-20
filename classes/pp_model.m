@@ -29,7 +29,7 @@ classdef pp_model
 %     INPUT: point process data (d), parameters (p)
 %     Plots model estimates
 %     % p = p.add_covar('population', 2, [0], 'indicator');
-%     Xi = m.make_X(d, channels, basis, knots, p.s);
+%     Xi = m.makeX(d, channels, basis, knots, p.s);
 %     INPUT: point process data (d), channels, basis,
 %            knots, tension parameter (s)
 %     OUTPUT: associated columns from design matrix (Xi)
@@ -76,7 +76,7 @@ classdef pp_model
       fs_update_ind = p.covariate_ind{1}+1:N_cov;
       obj.X = ones(d.T,N_cov);
       fprintf(['Building design matrix...\n']);
-      obj = obj.make_X(d,p);      
+      obj = obj.makeX(d,p);      
       fprintf(['Done!\n']);
       
       % trim burn-in period
@@ -301,19 +301,19 @@ classdef pp_model
       obj.KS = [ks_stat,ks_ci];
     end
     
-    function obj = make_X(obj,d,p)
+    function obj = makeX(obj,d,p)
       for i = 1:length(p.covariate_names)
         channels = p.covariate_channels{i};
         basis = p.covariate_bases{i};     
         knots = p.covariate_knots{i};
         ind = p.covariate_ind{i};        
-        Xi = obj.make_X_block(d, channels, basis, knots, p.s);
+        Xi = obj.makeX_block(d, channels, basis, knots, p.s);
         obj.X(:,ind) = Xi; clear Xi;
       end
 %       obj.X = obj.X(p.get_burn_in()+1:end,:);
     end
     
-    function Xi = make_X_block(obj, data, channels, basis, knots, s)
+    function Xi = makeX_block(obj, data, channels, basis, knots, s)
       if nargin<6, s = 0.5; end
       s_coeff = [-s  2-s s-2  s; 2*s s-3 3-2*s -s; ...
            -s   0   s   0;   0   1   0   0];
@@ -444,7 +444,8 @@ classdef pp_model
         
         % stop if singular warning received:
         if ~isempty(regexp(lastwarn(),'singular','once'))
-          error('Singular matrix encountered during glmfit');
+          warning('Singular matrix encountered during glmfit');
+%           error('Singular matrix encountered during glmfit');
         end
         
         eta = offset + X*b;
