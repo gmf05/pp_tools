@@ -490,10 +490,10 @@ classdef pp_model
       switch obj.fit_method
         case 'glmfit'
           b1 = obj.b(ind);
-          W1 = obj.W(ind,ind);
+          if DO_CONF_INT, W1 = obj.W(ind,ind); end;
         case {'filt','smooth'}
           b1 = obj.b{1}(ind);
-          W1 = obj.W{1}(ind,ind);
+          if DO_CONF_INT, W1 = obj.W{1}(ind,ind); end;
       end
       
       switch p.covariate_bases{1}
