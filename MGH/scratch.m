@@ -148,8 +148,8 @@ for response = 1:d.N_channels
   end
 end
 
-% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-% save wave_model_hi-res b dev stats d p
+[b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+save wave_model_hi-res b dev stats d p
 
 % %%
 % int_elec = [];
