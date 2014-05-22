@@ -9,7 +9,7 @@ classdef Neuroport
   end
   
   methods
-    
+%    
     function obj = Neuroport(patient)
     obj.patient = patient;
     obj.N_electrodes = 96;
