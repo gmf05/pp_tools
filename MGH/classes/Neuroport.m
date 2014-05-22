@@ -1,5 +1,5 @@
 classdef Neuroport
-  propert ies
+  properties
     patient
     N_electrodes
     coord
@@ -9,7 +9,7 @@ classdef Neuroport
   end
   
   methods
-%    
+    
     function obj = Neuroport(patient)
     obj.patient = patient;
     obj.N_electrodes = 96;
