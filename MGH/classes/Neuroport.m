@@ -38,9 +38,24 @@ classdef Neuroport
       end
     end
     obj.coord = coord;
-  end
-  
-  function plot(obj,Ws,cax)
+    end
+    
+    function int = interior(obj)
+      % Neuroport.interior:
+      % Get interior electrodes
+      % Usage: 
+      % N = Neurport('MG49');
+      % int = N.interior();
+      %
+      Xlo = min(obj.coord(:,1));
+      Xhi = max(obj.coord(:,1));
+      Ylo = min(obj.coord(:,2));
+      Yhi = max(obj.coord(:,2));
+      int = find(obj.coord(:,1)>Xlo & obj.coord(:,1)<Xhi & ...
+                 obj.coord(:,2)>Ylo & obj.coord(:,2)<Yhi);
+    end
+      
+    function plot(obj,Ws,cax)
     
     % Y = zeros(96,501);
     % for i = 1:96, i, if ~isempty(ms{i}.b), [t,y] = plot_spline(p.covariate_knots{2},ms{i}.b(p.covariate_ind{2})); Y(i,:) = exp(y); end; end

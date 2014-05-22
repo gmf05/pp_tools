@@ -85,15 +85,11 @@ p = p.add_covar('rate', 0, T_knots, 'indicator');
 R_knots = [0]; basis_fn = 'indicator';
 
 % get list, count of interior electrodes
-% 
-int_elec = [];
 chans = zeros(1,d.N_channels);
 for n = 1:d.N_channels
   chans(n) = str2double(d.labels{n});
-  if max(N.coord(chans(n),:))<10 && min(N.coord(chans(n),:))>1
-    int_elec = [int_elec chans(n)];
-  end
 end
+int_elec = N.interior();
 N_int = length(int_elec);
 N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
 Ncov = N_int+N_spatial_cov;
