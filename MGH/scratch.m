@@ -5,56 +5,61 @@ data_type = 'LFP';
 thresh = 1;
 N = Neuroport(patient_name);
 
+data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
+load([data_name '_filtered']); d_post = d'; time = t;
+
+
 %% get spikes from filtered data
-% % 
-% % % tmin = 115; tmax = 125;
-% % % tmin = 120; tmax = 122;
-% % tmin = 120; tmax = 125;
-% % % tmin = 100; tmax = 130;
-% % % tmin = 80; tmax = 90;
-% % min_refract = 0.3*3e4;
-% % trange = getclosest(time,tmin):getclosest(time,tmax);
-% % time_W = time(trange);
-% % Ws = d_post(trange,:)';
-% % T = size(Ws,2);
-% % labels = str2cell(num2str((1:96)'));
-% % 
-% % big_dn = zeros(N.N_electrodes,T);
-% % small_dn = zeros(N.N_electrodes,T);
-% % 
-% % for n = 1:N.N_electrodes
-% % % for n = [1 10 20]
-% %   % get all spikes
-% %   [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
-% %   % separate into two classes: big and small
-% %   [sortAmp,sortI] = sort(amp);
-% %   dropI = [];
-% %   for j = 2:length(amp)
-% %     if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
-% %       dropI = [dropI sortI(j)];
-% %     end
-% %   end
-% %   small_ind = ind(dropI);
-% %   big_ind = ind;
-% %   big_ind(dropI) = [];
-% % 
-% % %   % plot
-% % %   plot(time_W,Ws(n,:)); hold on
-% % %   plot(time_W(big_ind),Ws(n,big_ind),'rx');
-% % %   plot(time_W(small_ind),Ws(n,small_ind),'ks');
-% % %   pause(); clf;
-% %   
-% %   big_dn(n,big_ind) = 1;
-% %   small_dn(n,small_ind) = 1;
-% % 
-% % end
-% % 
-% % d_big = pp_data(big_dn, time_W, 'name', 'MG49-S36-LFP-big', 'labels', labels);
-% % d_small = pp_data(small_dn, time_W, 'name', 'MG49-S36-LFP-small', 'labels', labels);
-% % 
+
+% tmin = 115; tmax = 125;
+% tmin = 120; tmax = 122;
+% tmin = 120; tmax = 125;
+tmin = 115; tmax = 130;
+% tmin = 80; tmax = 90;
+min_refract = 0.3*3e4;
+trange = getclosest(time,tmin):getclosest(time,tmax);
+time_W = time(trange);
+Ws = d_post(trange,:)';
+T = size(Ws,2);
+labels = str2cell(num2str((1:96)'));
+
+big_dn = zeros(N.N_electrodes,T);
+small_dn = zeros(N.N_electrodes,T);
+
+for n = 1:N.N_electrodes
+% for n = [1 10 20]
+  % get all spikes
+  [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
+  % separate into two classes: big and small
+  [sortAmp,sortI] = sort(amp);
+  dropI = [];
+  for j = 2:length(amp)
+    if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
+      dropI = [dropI sortI(j)];
+    end
+  end
+  small_ind = ind(dropI);
+  big_ind = ind;
+  big_ind(dropI) = [];
+
+%   % plot
+%   plot(time_W,Ws(n,:)); hold on
+%   plot(time_W(big_ind),Ws(n,big_ind),'rx');
+%   plot(time_W(small_ind),Ws(n,small_ind),'ks');
+%   pause(); clf;
+  
+  big_dn(n,big_ind) = 1;
+  small_dn(n,small_ind) = 1;
+
+end
+
+d_big = pp_data(big_dn, time_W, 'name', 'MG49-S36-LFP-big', 'labels', labels);
+d_small = pp_data(small_dn, time_W, 'name', 'MG49-S36-LFP-small', 'labels', labels);
+
+
 % % % d_big = d_big.downsample(4);
 
-load test_wave_model_hi-res
+% load test_wave_model_hi-res
 
 %%
 
@@ -80,7 +85,8 @@ p = p.add_covar('rate', 0, T_knots, 'indicator');
 % p = p.add_covar('ensemble', [1:response-1, response+1:d.N_channels], R_knots, basis_fn);
 
 % R_knots = [0:10:20]; basis_fn = 'spline';
-R_knots = [0]; basis_fn = 'indicator';
+R_knots = [0 240 480]; basis_fn = 'spline';
+% R_knots = [0]; basis_fn = 'indicator';
 
 % get list, count of interior electrodes
 chans = zeros(1,d.N_channels);
@@ -94,8 +100,8 @@ Ncov = N_int+N_spatial_cov;
 NT = d.T;
 
 % initialize design matrix, response process
-X = zeros(N_int*NT,Ncov);
-y = zeros(N_int*NT,1);
+% X = zeros(N_int*NT,Ncov);
+% y = zeros(N_int*NT,1);
 
 for response = 1:d.N_channels
   m = pp_model();
@@ -119,7 +125,7 @@ for response = 1:d.N_channels
     p = p.add_covar('pop-hist4',C_right,R_knots,basis_fn);
 
     m = m.makeX(d,p);
-    m
+    m, pause();
     
     NT = size(m.X,1);
     trange = (count-1)*NT + (1:NT);
