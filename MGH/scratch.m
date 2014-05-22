@@ -4,10 +4,8 @@ seizure_name = 'Seizure36';
 data_type = 'LFP';
 thresh = 1;
 N = Neuroport(patient_name);
-% % data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
-% % load([data_name '_filtered']); d_post = d'; time = t;
-% % 
-% % %%
+
+%% get spikes from filtered data
 % % 
 % % % tmin = 115; tmax = 125;
 % % % tmin = 120; tmax = 122;
@@ -106,11 +104,8 @@ for response = 1:d.N_channels
   c_ind = chans(response);
   
   % first check that it's an interior electrode, then get up/down/etc
-  if ismember(c_ind, int_elec)
-    c_up = N.arrayMap(N.coord(c_ind,1),N.coord(c_ind,2)+1);
-    c_down = N.arrayMap(N.coord(c_ind,1),N.coord(c_ind,2)-1);
-    c_left = N.arrayMap(N.coord(c_ind,1)-1,N.coord(c_ind,2));
-    c_right = N.arrayMap(N.coord(c_ind,1)+1,N.coord(c_ind,2));
+  if ismember(c_ind, int_elec)    
+    [c_up, c_down,c_left,c_right] = N.neighbors(c_ind);
     C_up = find(chans==c_up);
     C_down = find(chans==c_down);
     C_left = find(chans==c_left);
@@ -130,8 +125,8 @@ for response = 1:d.N_channels
     trange = (count-1)*NT + (1:NT);
     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
     count = count+1;
-    X(trange,cov_ind) = m.X;
-    y(trange) = d.dn(response,:)';
+%     X(trange,cov_ind) = m.X;
+%     y(trange) = d.dn(response,:)';
     
 %     m = pp_model();
 %     m = m.fit(d,p); m.X=[];
@@ -144,18 +139,8 @@ for response = 1:d.N_channels
   end
 end
 
-[b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-save wave_model_hi-res b dev stats d p
+% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+% save wave_model_hi-res b dev stats d p
 
-% %%
-% int_elec = [];
-% count = 1;
-% for response = 1:d.N_channels
-%   c_ind = str2double(d.labels{response});
-%   if max(N.coord(c_ind,:))<10 && min(N.coord(c_ind,:))>1
-%     int_elec = [int_elec c_ind];
-%   end
-% end
-% %%
-% 
+
 

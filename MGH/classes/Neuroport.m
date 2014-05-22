@@ -1,5 +1,5 @@
 classdef Neuroport
-  properties
+  propert ies
     patient
     N_electrodes
     coord
@@ -53,6 +53,17 @@ classdef Neuroport
       Yhi = max(obj.coord(:,2));
       int = find(obj.coord(:,1)>Xlo & obj.coord(:,1)<Xhi & ...
                  obj.coord(:,2)>Ylo & obj.coord(:,2)<Yhi);
+    end
+    
+    function [cup,cdown,cleft,cright] = neighbors(obj,i)
+      try
+        cup = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)+1);
+        cdown = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)-1);
+        cleft = obj.arrayMap(obj.coord(i,1)-1,obj.coord(i,2));
+        cright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2));
+      catch 
+        error('One (or more neighbors) do not exist');
+      end      
     end
       
     function plot(obj,Ws,cax)
