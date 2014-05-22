@@ -16,7 +16,7 @@ end
 %%
 % tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
-tmin = 100; tmax = 130;
+tmin = 120; tmax = 125;
 % tmin = 80; tmax = 90;
 min_refract = 0.3*3e4;
 trange = getclosest(time,tmin):getclosest(time,tmax);
@@ -44,7 +44,7 @@ for n = 1:N.N_electrodes
 %   amps{n} = amp;
 end
 
-d = pp_data(spike_dn,time_W);
+% d = pp_data(spike_dn,time_W);
 
 %%
 % i = find(diff(amp)<0);

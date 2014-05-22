@@ -11,7 +11,8 @@ load([data_name '_filtered']); d_post = d'; time = t;
 
 % tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
-tmin = 100; tmax = 130;
+tmin = 120; tmax = 125;
+% tmin = 100; tmax = 130;
 % tmin = 80; tmax = 90;
 min_refract = 0.3*3e4;
 trange = getclosest(time,tmin):getclosest(time,tmax);
@@ -53,7 +54,7 @@ end
 d_big = pp_data(big_dn, time_W, 'name', 'MG49-S36-LFP-big', 'labels', labels);
 d_small = pp_data(small_dn, time_W, 'name', 'MG49-S36-LFP-small', 'labels', labels);
 
-d_big = d_big.downsample(4);
+% d_big = d_big.downsample(4);
 
 %%
 
@@ -101,7 +102,8 @@ NT = d.T;
 X = zeros(N_good_channels*NT,Ncov);
 y = zeros(N_good_channels*NT,1);
 
-for response = 1:d.N_channels
+for r = 1:d.N_channels
+  response = str2num(d.labels{r});
   m = pp_model();
   p = pp_params();
   p.response = response;
