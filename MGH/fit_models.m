@@ -8,7 +8,7 @@ N = Neuroport(patient_name);
 % data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
 % load([data_name '_filtered']); d_post = d'; time = t;
 % load test_wave_model_hi-res2
-% load wave_data_S45_test
+load wave_data_S45_test
 
 %% get spikes from filtered data
 
@@ -90,19 +90,19 @@ p = p.add_covar('rate', 0, T_knots, 'indicator');
 R_knots = [0]; basis_fn = 'indicator';
 
 % get list, count of interior electrodes
-chans = zeros(1,d.N_channels);
-for n = 1:d.N_channels
-  chans(n) = str2double(d.labels{n});
-end
-int_elec = N.interior();
-N_int = length(int_elec);
-N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
-Ncov = N_int+N_spatial_cov;
-NT = d.T;
+% chans = zeros(1,d.N_channels);
+% for n = 1:d.N_channels
+%   chans(n) = str2double(d.labels{n});
+% end
+% int_elec = N.interior();
+% N_int = length(int_elec);
+% N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
+% Ncov = N_int+N_spatial_cov;
+% NT = d.T;
 
 % initialize design matrix, response process
-X = zeros(N_int*NT,Ncov);
-y = zeros(N_int*NT,1);
+% X = zeros(N_int*NT,Ncov);
+% y = zeros(N_int*NT,1);
 
 for response = 1:d.N_channels
   response
@@ -148,7 +148,7 @@ for response = 1:d.N_channels
   end
 end
 
-[b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
 % save wave_model_hi-res2 b dev stats d p
 
 
