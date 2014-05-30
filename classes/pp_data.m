@@ -85,6 +85,10 @@ classdef pp_data
       tmin=t(1)-dt;
       tmax=t(end);
     end
+    
+    function obj = reset_time(obj)
+      obj.t = (1:obj.T)*obj.dt;
+    end
 
     function obj = concat(obj,obj2)
       % a couple general checks between old & new objects
@@ -93,12 +97,17 @@ classdef pp_data
       elseif size(obj.dn,1)~=size(obj2.dn,1)
         error('ERROR: data objects must contain the same number of dimensions');
       end
-      obj = pp_data([obj.dn obj2.dn],[obj.t obj.t(end) + (1:obj2.T)*obj2.dt]);
+      obj.dn = [obj.dn obj2.dn];
+      obj.t = [obj.t obj2.t];
+      obj.marks = [obj.marks obj2.marks];
+      obj.T = length(obj.t);
+      % check labels to ensure they match??
+      
     end
     
     function plot(obj, plot_type, params)
       global PLOT_COLOR
-      global FONT_SIZE      
+      global FONT_SIZE 
       if nargin<2, plot_type = 'rate'; end
       if nargin<3, params = pp_params(); end
       

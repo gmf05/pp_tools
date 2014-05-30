@@ -17,22 +17,19 @@ classdef pp_model
 %   end
 %
 %   methods
-%     m = m.fit(d,p)
+%     m = m.fit(d,p)    
+%     Estimates model parameters & covariance
 %     INPUT: point process data (d), parameters (p)
 %     OUPUT: estimated point process model (m)
 %
 %     m.gof(d)
+%     Shows goodness-of-fit summary for model m
 %     INPUT: point process data (d)
-%     Shows goodness-of-fit summary for model (m)
 %
 %     m.plot(d,p)
-%     INPUT: point process data (d), parameters (p)
 %     Plots model estimates
-%     % p = p.add_covar('population', 2, [0], 'indicator');
-%     Xi = m.makeX(d, channels, basis, knots, p.s);
-%     INPUT: point process data (d), channels, basis,
-%            knots, tension parameter (s)
-%     OUTPUT: associated columns from design matrix (Xi)
+%     INPUT: point process data (d), parameters (p)
+%     
 %   end
 
   properties

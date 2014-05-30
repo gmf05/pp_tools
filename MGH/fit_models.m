@@ -7,7 +7,6 @@ N = Neuroport(patient_name);
 
 % data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
 % load([data_name '_filtered']); d_post = d'; time = t;
-% load test_wave_model_hi-res2
 load wave_data_S45_test
 
 %% get spikes from filtered data
@@ -59,7 +58,6 @@ d_big = pp_data(big_dn, time_W, 'name', 'MG49-S45-LFP-big', 'labels', labels);
 d_small = pp_data(small_dn, time_W, 'name', 'MG49-S45-LFP-small', 'labels', labels);
 d_both = pp_data([small_dn; big_dn], time_W, 'name', 'MG49-S45-LFP-both', 'labels', labels);
 d_all = pp_data(small_dn + big_dn, time_W, 'name', 'MG49-S45-LFP', 'labels', labels);
-% save test_wave_model_hi-res2 d_big d_small d_both d_all
 % save -v7.3 wave_data_S45_test  d_big d_small d_both d_all
 
 %%
@@ -85,26 +83,29 @@ p = p.add_covar('rate', 0, T_knots, 'indicator');
 % R_knots = [0:10:20]; basis_fn = 'spline';
 % p = p.add_covar('ensemble', [1:response-1, response+1:d.N_channels], R_knots, basis_fn);
 
-% R_knots = [0 20]; basis_fn = 'spline';
+% R_knots = [0 10 20]; basis_fn = 'spline';
 % R_knots = [0 240 480]; basis_fn = 'spline';
-R_knots = [0]; basis_fn = 'indicator';
+% R_knots = [0]; basis_fn = 'indicator';
 
 % get list, count of interior electrodes
-% chans = zeros(1,d.N_channels);
-% for n = 1:d.N_channels
-%   chans(n) = str2double(d.labels{n});
-% end
-% int_elec = N.interior();
-% N_int = length(int_elec);
-% N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
-% Ncov = N_int+N_spatial_cov;
-% NT = d.T;
+chans = zeros(1,d.N_channels);
+for n = 1:d.N_channels
+  chans(n) = str2double(d.labels{n});
+end
+int_elec = N.interior();
+N_int = length(int_elec);
+N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
+Ncov = N_int+N_spatial_cov;
+NT = d.T;
 
 % initialize design matrix, response process
-% X = zeros(N_int*NT,Ncov);
-% y = zeros(N_int*NT,1);
+X = zeros(N_int*NT,Ncov);
+y = zeros(N_int*NT,1);
+% cumDir = zeros(d.N_channels,2);
+% cumDirW = cell(d.N_channels,1);
 
 for response = 1:d.N_channels
+% for response = 7
   response
   m = pp_model();
   p = pp_params();
@@ -118,8 +119,9 @@ for response = 1:d.N_channels
     C_down = find(chans==c_down);
     C_left = find(chans==c_left);
     C_right = find(chans==c_right);
+%     D0 = d.sub_data([response,C_up,C_down,C_left,C_right]);
     
-    try      
+    try
     p = p.add_covar('rate',0,[0,1],'indicator'); % baseline rate
 % %     p = p.add_covar('self-history',response,Q_knots,basis_fn);
     p = p.add_covar('pop-hist1',C_up,R_knots,basis_fn);
@@ -127,27 +129,30 @@ for response = 1:d.N_channels
     p = p.add_covar('pop-hist3',C_left,R_knots,basis_fn);
     p = p.add_covar('pop-hist4',C_right,R_knots,basis_fn);
 
-% %     m = m.makeX(d,p);
+    m = m.makeX(d,p); % fprintf('Made design matrix\n');
 % %     m, pause();
     
-% %     NT = size(m.X,1);
-% %     trange = (count-1)*NT + (1:NT);
-% %     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
-% %     count = count+1;
-% %     X(trange,cov_ind) = m.X;
-% %     y(trange) = d.dn(response,:)';
+    trange = (count-1)*NT + (1:NT);
+    cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
+    count = count+1;j
+    X(trange,cov_ind) = m.X;
+    y(trange) = d.dn(response,:)';
     
-    m = pp_model();
-    m = m.fit(d,p); %m.X=[];
-    m, m.b, pause();
-% %     ps{count} = p;
-% %     ms{response} = m;
+%     m = m.fit(d,p); %m.X=[];
+%     m
+    
+%     WT = [0 0 1 -1; -1 1 0 0];
+%     ind = 2:5;
+%     cumDir(response,:) = WT * exp(m.b(ind));
+%     cumDirW{response} = WT * m.W(ind,ind) * WT';
+    
+    
+% %     m, m.b, pause();
 
-    fprintf('Made design matrix\n');
     end
   end
 end
-
+% 
 % [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
 % save wave_model_hi-res2 b dev stats d p
 

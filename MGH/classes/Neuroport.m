@@ -5,7 +5,7 @@ classdef Neuroport
     coord
     arrayMap
     Ws
-    color
+    caxis
   end
   
   methods
@@ -66,10 +66,7 @@ classdef Neuroport
       end      
     end
       
-    function plot(obj,Ws,cax)
-    
-    % Y = zeros(96,501);
-    % for i = 1:96, i, if ~isempty(ms{i}.b), [t,y] = plot_spline(p.covariate_knots{2},ms{i}.b(p.covariate_ind{2})); Y(i,:) = exp(y); end; end
+    function plot(obj,Ws,cax)    
 
     if nargin<2
       if isempty(obj.Ws)
@@ -78,16 +75,12 @@ classdef Neuroport
         Ws = obj.Ws;
       end
     end
-    
-    if isempty(obj.color) && nargin<3
-      if max(range(Ws))==0
-        cax = [NaN NaN];
-      else
-        cax = [min(min(Ws)) max(max(Ws))];
-      end
-    elseif isempty(cax)
-      cax = obj.color;
-    end
+            
+    if nargin<3 && isempty(obj.caxis)
+      cax = [min(min(Ws)) max(max(Ws))];
+    elseif nargin<3
+      cax = obj.caxis;
+    end    
 
     C = cax(2)-cax(1);    
     R = 0.5;
@@ -95,76 +88,63 @@ classdef Neuroport
     T = size(Ws,2);
 
     % plotting---
-%     figure('units','normalized','position',[0 0 1 1]);
     clf, set(gcf,'units','normalized','position',[0 0 1 1]);
-    
-    % set up colormap
-    colormap('default'), color_RGB = colormap();
+    color_RGB = colormap();
 %     my_img = phaseintensity(Ws);
     
     for t = 1:T
       for n = 1:obj.N_electrodes
-        % set coordinates
         x = obj.coord(n,1);
         y = obj.coord(n,2);
-        % get color
-        if isnan(C)
-          col = 'w';
+        if C==0 || isnan(C)
+          col_ind = 1;
         else          
           col_ind = round((Ws(n,t)-cax(1))/C*63)+1;
-          col_ind = min(col_ind,64); col_ind = max(col_ind,1);
-          col = color_RGB(col_ind,:);
+          col_ind = min(col_ind,64);
+          col_ind = max(col_ind,1);
         end
+        col = color_RGB(col_ind,:);
 %         col = reshape(my_img(n,:,:),1,[]); % phase intensity
-        % fill
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
         text(x,y,num2str(n),'fontsize',22);
       end
       axis xy;
-      title(num2str(t));
-      pause(0.005);
-      hold off;
       set(gca,'XTick',[]);
       set(gca,'YTick',[]);
+      
+      if T>1
+        title(num2str(t));
+        pause(0.005);
+        hold off;
+      end
     end
   end
   
-   function plot_dir(obj, dirs, W)
+   function plot_dir(obj, bs, Ws)
+    if nargin<3
+      doCI = false;
+    else
+      doCI = true;
+    end
     
     obj.plot();
     hold on;
-    if nargin<3, W = []; end
+    WT = [0 0 1 -1; -1 1 0 0];
     
-%     switch dir_type
-%       case 'polar'
-%         dx = dirs(:,1).*cos(dirs(:,2));
-%         dy = dirs(:,1).*sin(dirs(:,2));
-%       else
-%         dx = dirs(:,1);
-%         dy = dirs(:,2);
-%     end
-
-%   transformation from b's to (x,y)
-%   b = (bUp, bDown, bLeft, bRight)
-%   y = bUp - bDown
-%   x = bRight - bLeft
-%   (y,x) = X*b
-    X = [1 -1 0 0; 0 0 -1 1];
-  
     for n = 1:obj.N_electrodes
-      t = X*dirs(n,:)';
-      t
-      plot(obj.coord(n,1) + [-t(1) 0], obj.coord(n,2) + [-t(2) 0], 'b');
+      if ~isempty(bs{response})
+        b = bs{response};
+        cumDir = WT*b;
+        plot(obj.coord(n,1) + [-cumDir(1) 0], obj.coord(n,2) + [-cumDir(2) 0], 'b');
+        if doCI
+          cumDirW = WT * Ws{response} * WT';
+          
+        end
+        
+      end
     end
-      
-    
-    
     
    end
-   
-   
-  
-  
     
   
   end
