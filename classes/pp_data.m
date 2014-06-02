@@ -189,7 +189,7 @@ classdef pp_data
           end
           xlabel('time [s]','fontsize',FONT_SIZE);
           ylabel('channel','fontsize',FONT_SIZE);
-          title({ttl; 'raster plot'});
+          title([ttl ' raster plot']);
       end      
       update_fig();
     end
