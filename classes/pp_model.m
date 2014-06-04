@@ -60,9 +60,7 @@ classdef pp_model
     %
     %
       warning(''); % clear last warning 
-      fprintf(['\nFitting point process model...\n']);
-      
-      global RESCALE_FUNC      
+      fprintf(['\nFitting point process model...\n']);      
       obj.fit_method = p.fit_method;
       obj.link = p.link;
       N_cov_types = length(p.covariate_names);
@@ -254,15 +252,19 @@ classdef pp_model
       end
       fprintf(['Done!\n']);
             
-      % goodness-of-fit measures:
+      obj = obj.calcGOF();% goodness-of-fit
+    end
+    
+    function obj = calcGOF(obj)
+      global RESCALE_FUNC
       obj.LL = sum(log(poisspdf(obj.y,obj.CIF)));
       obj.dev = 2*(sum(log(poisspdf(obj.y,obj.y))) - obj.LL);
-      obj.AIC = obj.dev+2*length(b);
-            
+      obj.AIC = obj.dev+2*size(obj.b,1);
+
       % time rescaling & KS test
       spike_ind = find(obj.y);           
       numISIs = length(spike_ind)-1;
-      
+
       if numISIs>2
         z = zeros(1, numISIs);
         for j=1:numISIs                                                
@@ -277,7 +279,7 @@ classdef pp_model
             rs_cdf = @(x)(expcdf(x,1));
         end
         z = rs_fn(z);
-        
+
         try
           [eCDF,xCDF] = ecdf(sort(z));
           aCDF = rs_cdf(xCDF);
@@ -293,9 +295,31 @@ classdef pp_model
         ks_stat = NaN;
         ks_ci = NaN;
       end
-      
+
       obj.rsISI = z;
-      obj.KS = [ks_stat,ks_ci];
+      
+      % compute p-value for ks-statistic (from kstest2.m):
+      % WARNING: still under construction
+% % %       n1     =  length(aCDF);
+% % %       n2     =  length(eCDF);
+% % %       n      =  n1 * n2 /(n1 + n2);
+% % %       lambda =  max((sqrt(n) + 0.12 + 0.11/sqrt(n)) * ks_stat , 0);
+% % %       
+% % %       %
+% % %       % 1-sided test:
+% % %       % % %    ks_p  =  exp(-2 * lambda * lambda);
+% % %       % 2-sided test (default):
+% % %       %  "Use the asymptotic Q-function to approximate the 2-sided P-value."
+% % %       j       =  (1:101)';
+% % %       ks_p  =  2 * sum((-1).^(j-1).*exp(-2*lambda*lambda*j.^2));
+% % %       ks_p  =  min(max(ks_p, 0), 1);
+      ks_p = NaN;
+      
+      obj.KS = [ks_stat,ks_ci,ks_p];
+      
+      
+      
+      
     end
     
     function obj = makeX(obj,d,p)

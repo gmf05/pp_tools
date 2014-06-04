@@ -6,6 +6,31 @@ thresh = 1;
 N = Neuroport(patient_name);
 load wave_data_S45_test
 
+%% concatenate intervals of interest
+
+d = d_big;
+
+spks = [];
+for n = 1:d.N_channels
+  spks = [spks d.t(find(d.dn(n,:)))];
+end
+
+[counts, times] = hist(spks,d.t(1):0.02:d.t(end));
+ind = find(counts>50);
+for n = 1:length(ind)
+  tOn = times(ind(n)-1);
+  tOff = times(ind(n)+1);
+  if n==1
+    d0 = d.sub_time(tOn,tOff);
+  else
+    d0 = d0.concat(d.sub_time(tOn,tOff));
+  end
+end
+
+d0 = d0.reset_time();
+d = d0;
+
+
 %%
 
 d = d_small;
@@ -40,8 +65,8 @@ Ncov = 1+N_int_cov+N_spatial_cov;
 NT = d.T;
 
 % initialize design matrix, response process
-% X = zeros(N_int*NT,Ncov);
-% y = zeros(N_int*NT,1);
+X = zeros(N_int*NT,Ncov);
+y = zeros(N_int*NT,1);
 
 ps = [];
 count = 1;
@@ -77,12 +102,12 @@ for response = 1:d.N_channels
       p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
     end
 
-% %     m = m.makeX(d,p); % fprintf('Made design matrix\n');
-% %     trange = (count-1)*NT + (1:NT);
-% %     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
-% %     count = count+1;
-% %     X(trange,:) = m.X;
-% %     y(trange) = d.dn(response,:)';
+    m = m.makeX(d,p); % fprintf('Made design matrix\n');
+    trange = (count-1)*NT + (1:NT);
+    cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
+    count = count+1;
+    X(trange,:) = m.X;
+    y(trange) = d.dn(response,:)';
     
 % %     m = m.fit(d,p); m, figure, m.plot(d,p); pause; clf;
     
@@ -93,10 +118,12 @@ end
 
 %%
 [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-m = pp_model(); m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
+m = pp_model();
+m.X = X; m.y = y; m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
+m.CIF = glmval(b,X,'log','constant','off');
+m = m.calcGOF();
 figure, m.plot(d,p)
 figure, m.gof(d)
 
-%% 
 
 
