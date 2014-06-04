@@ -634,7 +634,12 @@ classdef pp_model
       global PLOT_COLOR
       global RESCALE_FUNC
       
-      [t_axis,~,dt] = d.get_time();
+      if nargin<2, 
+        t_axis = 1:length(obj.y);
+        dt = 1;        
+      else
+        [t_axis,~,dt] = d.get_time();
+      end
       numISIs = length(obj.rsISI);
 
       %   calculate ks statistic, confidence bounds      

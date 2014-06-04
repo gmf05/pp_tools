@@ -1,52 +1,57 @@
 %% load data
 patient_name = 'MG49';
-seizure_name = 'Seizure36';
+seizure_name = 'Seizure45';
 data_type = 'LFP';
 thresh = 1;
 N = Neuroport(patient_name);
-% load test_wave_model_hi-res2
-
-% d = pp_data([d_big.dn; d_small.dn], d_big.t, 'name', [patient_name '-' seizure_name '-' data_type '-all']);
-% d = d.downsample(4);
+load wave_data_S45_test
 
 %%
 
-% d = d_big;
-% d = d_small; 
+d = d_small;
+[good_counts,good_channels] = removeoutliers(sum(d.dn,2));
+d = d.sub_data(good_channels);
+
+%% small spike models
+
+% 1- what do intrinsic effects give us? good fit, peak ~100ms
+% 2- what do add'l spatial effects (small spikes) give us? worse fit, large CI
+% 3- what do add'l spatial effects (big spikes) give us?
+
 m = pp_model();
-p = pp_params();
 N = Neuroport(patient_name);
-fit_method = 'glmfit'; noise = [];
-tcount = 0;
+
+T_knots = [0 1]; T_basis = 'indicator';
+dt_ms = round(.001 / d.dt);
+Q_knots = [] * dt_ms; Q_basis = '';
+% Q_knots = [1 100:100:500] * dt_ms; Q_basis = 'spline'; 
+% R_knots = []; R_basis = '';
+R_knots = [0 5 10] * dt_ms; R_basis = 'spline'; 
+Q = length(Q_knots); R = length(R_knots);
+
+% get list, count of interior electrodes
+chans = cellstr2num(d.labels);
+int_elec = N.interior();
+N_int = length(int_elec);
+N_spatial_cov = 4*(R + (2*isequal(R_basis,'spline')*(R>0)));
+N_int_cov = Q+(2*isequal(Q_basis,'spline')*(Q>0));
+% N_int_cov = N_int*(Q+(2*isequal(Q_basis,'spline')*(Q>0)));
+Ncov = 1+N_int_cov+N_spatial_cov;
+NT = d.T;
+
+% initialize design matrix, response process
+% X = zeros(N_int*NT,Ncov);
+% y = zeros(N_int*NT,1);
+
+ps = [];
 count = 1;
-T_knots = [0 1];
-% Q_knots = [1 100:100:500]; basis_fn = 'spline';
-Q_knots = [1 20:20:100 200:100:500]; basis_fn = 'spline';
-% R_knots = [0 240 480]; basis_fn = 'spline';
-R_knots = [0 10 50]; basis_fn = 'spline';
-% R_knots = [0]; basis_fn = 'indicator';
-
-% % % get list, count of interior electrodes
-% % chans = zeros(1,d.N_channels);
-% % for n = 1:d.N_channels
-% %   chans(n) = str2double(d.labels{n});
-% % end
-% % int_elec = N.interior();
-% % N_int = length(int_elec);
-% % N_spatial_cov = 4*(length(R_knots) + 2*(isequal(basis_fn,'spline')));
-% % Ncov = N_int+N_spatial_cov;
-% % NT = d.T;
-% % 
-% % % initialize design matrix, response process
-% % X = zeros(N_int*NT,Ncov);
-% % y = zeros(N_int*NT,1);
-
-for response = d.N_channels/2+1:d.N_channels
-  response
+for response = 1:d.N_channels
+% for response = 45
+%   response
   m = pp_model();
   p = pp_params();
   p.response = response;
-  c_ind = chans(response-d.N_channels/2);
+  c_ind = chans(response);
   
   % first check that it's an interior electrode, then get up/down/etc
   if ismember(c_ind, int_elec)    
@@ -55,37 +60,43 @@ for response = d.N_channels/2+1:d.N_channels
     C_down = find(chans==c_down);
     C_left = find(chans==c_left);
     C_right = find(chans==c_right);
+%     D0 = d.sub_data([response,C_up,C_down,C_left,C_right]);
     
-    try      
-    p = p.add_covar('rate',0,[0,1],'indicator'); % baseline rate
-    p = p.add_covar('self-history',response,Q_knots,'spline');
-    p = p.add_covar('pop-hist1',C_up,R_knots,basis_fn);
-    p = p.add_covar('pop-hist2',C_down,R_knots,basis_fn);
-    p = p.add_covar('pop-hist3',C_left,R_knots,basis_fn);
-    p = p.add_covar('pop-hist4',C_right,R_knots,basis_fn);
+    try
+    p = p.add_covar('rate',0,T_knots,T_basis); % baseline rate
 
-% %     m = m.makeX(d,p);
-% %     m, pause();
+    if Q>0
+      p = p.add_covar('self-history',response,Q_knots,Q_basis);
+%       p = p.add_covar('self-history2',response+1,Q_knots,Q_basis);
+    end
     
-% %     NT = size(m.X,1);
+    if R>0
+      p = p.add_covar('pop-hist1',C_up,R_knots,R_basis);
+      p = p.add_covar('pop-hist2',C_down,R_knots,R_basis);
+      p = p.add_covar('pop-hist3',C_left,R_knots,R_basis);
+      p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
+    end
+
+% %     m = m.makeX(d,p); % fprintf('Made design matrix\n');
 % %     trange = (count-1)*NT + (1:NT);
 % %     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
 % %     count = count+1;
-% %     X(trange,cov_ind) = m.X;
+% %     X(trange,:) = m.X;
 % %     y(trange) = d.dn(response,:)';
     
-    m = pp_model();
-    m = m.fit(d,p); %m.X=[];
-    m, pause();
-% %     ps{count} = p;
-% %     ms{response} = m;
-
+% %     m = m.fit(d,p); m, figure, m.plot(d,p); pause; clf;
+    
+    ps = p; % save parameters
     end
   end
 end
 
-% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-% save wave_model_hi-res2 b dev stats d p
+%%
+[b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+m = pp_model(); m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
+figure, m.plot(d,p)
+figure, m.gof(d)
 
+%% 
 
 
