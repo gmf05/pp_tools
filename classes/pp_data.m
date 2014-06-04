@@ -20,7 +20,7 @@ classdef pp_data
     name % title of the data set
     labels % identifier for each pp
     dn % point process data (rows = channels, cols = time)
-    marks % auxillary data for each spike, if desired
+    marks % auxillary data fors each spike, if desired
     N_channels % number of channels (rows)
     t % time axis
     dt % time resolution
@@ -55,14 +55,14 @@ classdef pp_data
     end
     
     % Returns a data object with the specified channels
-    function obj = sub_data(obj,ind)      
-      % keep only valid indices:
-      ind = intersect(1:obj.N_channels,ind);
-      obj.dn = obj.dn(ind,:);
-      obj.N_channels = size(obj.dn,1);   
-      if ~isempty(obj.labels)
-        obj.labels = {obj.labels{ind}}; 
-      end
+    function obj2 = sub_data(obj,ind)      
+      % check list ind to make sure entries are valid??
+      dn = obj.dn(ind,:);
+      labels = {obj.labels{ind}};
+      obj2 = pp_data(dn,obj.t,'name',obj.name,'labels',labels);
+      if ~isempty(obj.marks)
+        obj2.marks = obj.marks(ind,:);
+      end          
     end
     
     function obj = sub_time(obj,varargin)
@@ -185,7 +185,10 @@ classdef pp_data
           colorbar();
         case 'raster'          
           for i = 1:obj.N_channels
-            plot(obj.t,obj.dn(i,:)+i-1,PLOT_COLOR); hold on;
+            ind = find(obj.dn(i,:));
+            for k = 1:length(ind)
+              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR); hold on;
+            end
           end
           xlabel('time [s]','fontsize',FONT_SIZE);
           ylabel('channel','fontsize',FONT_SIZE);
