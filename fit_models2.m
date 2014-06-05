@@ -31,9 +31,11 @@ d0 = d0.reset_time();
 d = d0;
 
 
-%%
+%% remove channels with outlying number of spikes
 
-d = d_small;
+% d = d_small;
+d = d_big;
+d = d_big.sub_time(100,105); % trying this...
 [good_counts,good_channels] = removeoutliers(sum(d.dn,2));
 d = d.sub_data(good_channels);
 
@@ -72,7 +74,7 @@ ps = [];
 count = 1;
 for response = 1:d.N_channels
 % for response = 45
-%   response
+  response
   m = pp_model();
   p = pp_params();
   p.response = response;
@@ -104,7 +106,6 @@ for response = 1:d.N_channels
 
     m = m.makeX(d,p); % fprintf('Made design matrix\n');
     trange = (count-1)*NT + (1:NT);
-    cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
     count = count+1;
     X(trange,:) = m.X;
     y(trange) = d.dn(response,:)';
@@ -122,6 +123,7 @@ m = pp_model();
 m.X = X; m.y = y; m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
 m.CIF = glmval(b,X,'log','constant','off');
 m = m.calcGOF();
+p = ps;
 figure, m.plot(d,p)
 figure, m.gof(d)
 
