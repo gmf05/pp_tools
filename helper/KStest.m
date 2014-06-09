@@ -1,5 +1,9 @@
 function [ks_stat, ks_ci, z] = ks_test(y,cif)
-
+% KStest.m
+% [ks_stat, ks_ci] = ks_test(y,cif)
+% Input: y (point process data), cif (cond'l intensity from model)
+% Output: ks_stat (KS score), ks_ci (confidence bound)
+%
 spike_ind = find(y);           
 numISIs = length(spike_ind)-1;
 
