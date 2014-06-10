@@ -580,6 +580,7 @@ classdef pp_model
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
             end
+            plot([lag_axis(1) lag_axis(end)],[1 1],'k--');
             xlabel('lag time [ms]');
             ylabel('mod.');
 
