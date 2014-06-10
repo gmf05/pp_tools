@@ -84,13 +84,29 @@ end
 d0 = d0.reset_time();
 d = d0;
 
+tOn = 0;  tOff = 0.04;
+D0 = d0.sub_time(tOn,tOff).dn;
+ind = find(sum(D0)); % what times do spikes occur?
+chan = zeros(1,96);
+count = 0;
+for n = 1:length(ind)
+  M = length(find(D0(:,ind(n))));
+  chan(count+(1:M)) = find(D0(:,ind(n))); % which channels spike?
+  count = count+M;
+end
+chan(count+1:end) = [];
+
+d = d_big;
+d0 = d.sub_data(chan);
+
 
 %% remove channels with outlying number of spikes
 
 % d = d_small;
 d = d_big;
-[good_counts,good_channels] = removeoutliers(sum(d.dn,2));
-d = d.sub_data(good_channels);
+counts = sum(d.dn,2);
+[goodCounts,goodChan] = removeoutliers(counts);
+d = d.sub_data(goodChan);
 
 %% small spike models
 
