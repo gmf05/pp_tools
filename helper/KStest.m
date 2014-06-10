@@ -1,4 +1,4 @@
-function [ks_stat, ks_ci, z] = ks_test(y,cif)
+function [ks_stat, ks_ci, z] = KStest(y,cif)
 % KStest.m
 % [ks_stat, ks_ci] = ks_test(y,cif)
 % Input: y (point process data), cif (cond'l intensity from model)
@@ -22,6 +22,7 @@ rs_cdf = @(x)(unifcdf(x,0,1));
 % % %---- rescale function is identity
 % % rs_fn = @(x)(x);
 % % rs_cdf = @(x)(expcdf(x,1));
+
 
 z = rs_fn(z);
 [eCDF,xCDF] = ecdf(sort(z));
