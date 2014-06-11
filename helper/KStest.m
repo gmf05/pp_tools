@@ -4,6 +4,7 @@ function [ks_stat, ks_ci, z] = KStest(y,cif)
 % Input: y (point process data), cif (cond'l intensity from model)
 % Output: ks_stat (KS score), ks_ci (confidence bound)
 %
+
 spike_ind = find(y);           
 numISIs = length(spike_ind)-1;
 
@@ -12,7 +13,7 @@ if numISIs<3
 end
 
 z = zeros(1, numISIs);
-for j=1:numISIs                                                
+for j=1:numISIs                           
   z(j) = sum(cif(spike_ind(j)+1:spike_ind(j+1)));
 end
 

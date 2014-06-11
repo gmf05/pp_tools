@@ -90,7 +90,8 @@ classdef pp_model
         case 'glmfit'
           obj.b = b;
           obj.W = stats.covb;
-          obj.CIF = glmval(b,obj.X,obj.link,'constant','off');
+%           obj.CIF = glmval(b,obj.X,obj.link,'constant','off');
+          obj.CIF = exp(obj.X*b);
           obj.stats=stats;
         
         case 'filt'                    
@@ -476,7 +477,7 @@ classdef pp_model
       % glmfit covariance:
       RI = R\eye(p);
       C = RI * RI';
-      % assumes normal dispersion (s=1):
+      % assumes no over/under-dispersion (s=1):
       % C=C*s^2;
 
       stats.beta = b;
@@ -661,7 +662,7 @@ classdef pp_model
       
       if nargin<2, 
         t_axis = 1:length(obj.y);
-        dt = 1;        
+        dt = 3e-5;    
       else
         [t_axis,~,dt] = d.get_time();
       end
