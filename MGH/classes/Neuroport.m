@@ -53,6 +53,9 @@ classdef Neuroport
       Yhi = max(obj.coord(:,2));
       int = find(obj.coord(:,1)>Xlo & obj.coord(:,1)<Xhi & ...
                  obj.coord(:,2)>Ylo & obj.coord(:,2)<Yhi);
+      % remove bad channels
+      % for MG49: channel 89 is bad
+      if isequal('MG49',obj.patient), int = setdiff(int, 89); end
     end
     
     function [cup,cdown,cleft,cright] = neighbors(obj,i)

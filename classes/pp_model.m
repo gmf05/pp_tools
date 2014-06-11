@@ -181,7 +181,7 @@ classdef pp_model
           % noise (Kalman gain) matrix:
           noise_mtx = zeros(N_cov);
           for n = 1:N_cov_types
-            for i = p.covariate_ind{n}
+            for i = p.covariatee_ind{n}
               noise_mtx(i, i) = p.noise(n);
             end
           end
@@ -455,7 +455,19 @@ classdef pp_model
         %  from wfit.m:
         zw = z .* sqrtw;
         Xw = X .* sqrtw(:,ones(1,p));
-        [Q,R] = qr(Xw,0);
+        [Q,R0] = qr(Xw,0);
+        if iter>20
+          0;
+        end
+        
+        if ~isempty(regexp(lastwarn(),'singular','once'))
+          iter
+          fprintf('\nWarning: Singular matrix encountered during QR decomposition\n');
+          error('asdf');
+%           break;
+        end
+        
+        R = R0;
         b = R \ (Q'*zw);
 
         % show estimate at each step
@@ -465,10 +477,7 @@ classdef pp_model
         if norm(b - b_old, inf) < eps, break; end
         
         % stop if singular warning received:
-        if ~isempty(regexp(lastwarn(),'singular','once'))
-          warning('Singular matrix encountered during glmfit');
-%           error('Singular matrix encountered during glmfit');
-        end
+        
         
         eta = offset + X*b;
         mu = ilinkFn(eta);
@@ -662,7 +671,7 @@ classdef pp_model
       
       if nargin<2, 
         t_axis = 1:length(obj.y);
-        dt = 3e-5;    
+        dt = 1;
       else
         [t_axis,~,dt] = d.get_time();
       end
