@@ -463,8 +463,7 @@ classdef pp_model
         if ~isempty(regexp(lastwarn(),'singular','once'))
           iter
           fprintf('\nWarning: Singular matrix encountered during QR decomposition\n');
-          error('asdf');
-%           break;
+          break;
         end
         
         R = R0;
