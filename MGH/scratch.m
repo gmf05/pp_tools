@@ -1,4 +1,7 @@
 %%
+
+diary small_spike_models.txt
+
 DO_CONF_INT = false;
 T_knots = p.covariate_knots{1}; T_basis = p.covariate_bases{1};
 Q_knots = p.covariate_knots{2}; Q_basis = p.covariate_bases{2}; 
@@ -13,7 +16,8 @@ chans = cellstr2num(d.labels);
 int_elec = N.interior();
 
 for response = 1:d.N_channels
-
+  
+  response
   p0 = pp_params();
   p0.response = response;
   c_ind = chans(response);
@@ -41,7 +45,10 @@ for response = 1:d.N_channels
     end
 
     % m0 = m0.makeX(d,p0);
-    m0 = m0.fit(d,p0); m0.plot(d,p0); hold on; pause(0.2);
+    m0 = m0.fit(d,p0);
+    if m0.KS(1)>0.1, PLOT_COLOR = 'r';
+    else PLOT_COLOR = 'b'; end
+    m0.plot(d,p0); hold on; pause(0.2);
     m0
   end
   
@@ -50,3 +57,4 @@ end
 % m0.y = d.dn(response,:)';
 % m0.CIF = exp(m0.X*b);
 % m0 = m0.calcGOF();
+diary off;
