@@ -123,7 +123,7 @@ classdef Neuroport
     end
   end
   
-   function plot_dir(obj, bs, Ws)
+  function plot_dir(obj, bs, Ws)
     if nargin<3
       doCI = false;
     else
@@ -143,12 +143,42 @@ classdef Neuroport
           cumDirW = WT * Ws{response} * WT';
           
         end
-        
       end
     end
-    
    end
+   
+  function [y0,W0] = spline_dir(obj, knots, b, W)
+    % initialize variables
+    s = 0.5;
+%      WT = [0 0 1 -1; -1 1 0 0];
+    Ns = length(knots) + 2;
+    ys = cell(1,4);
+    vr = cell(1,4);
+    cv = cell(4,4); 
     
+    % loop over the 4 directions, compute mean and variance
+    % 1 = up->down (y-)
+    % 2 = down->up (y+)
+    % 3 = left->right (x+)
+    % 4 = right->left (x-)
+    for i = 1:4
+      ind = (i-1)*Ns + (1:Ns);
+      [lags, mn, mnp2se] = plot_spline(knots, b(ind), s, W(ind,ind));
+      ys{i} = mn';
+      vr{i} = ((mnp2se - mn)/2).^2;
+      for j = 1:4, cv{i,j} = zeros(length(lags),1); end
+    end
+    
+    N0 = length(lags);
+    y0 = [ys{3} - ys{4}; ys{2} - ys{1}];
+    W0 = zeros(2,2,N0);
+    for n = 1:N0
+      W0(1,1,n) = vr{3}(n) + vr{4}(n) - 2*cv{3,4}(n);
+      W0(2,2,n) = vr{1}(n) + vr{2}(n) - 2*cv{1,2}(n);
+      W0(1,2,n) = cv{1,2}(n) + cv{1,3}(n) + cv{1,4}(n) + cv{2,3}(n) + cv{2,4}(n) + cv{3,4}(n);
+      W0(2,1,n) = W0(1,2,n);
+    end
+  end
   
   end
 end

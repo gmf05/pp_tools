@@ -502,7 +502,7 @@ classdef pp_model
 
     function plot(obj, d, p)
       
-      global PLOT_COLOR;      
+      global PLOT_COLOR;
       global DO_CONF_INT;
       global DO_MASK;
       
