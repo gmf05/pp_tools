@@ -64,6 +64,7 @@
       fprintf(['\nFitting point process model...\n']);      
       obj.fit_method = p.fit_method;
       obj.link = p.link;
+      obj.rs = p.rs;
       N_cov_types = length(p.covariate_names);
       obj.y = d.dn(p.response,:)'; % response variable      
       
@@ -253,7 +254,7 @@
           obj.W = Ws0;
       end
       fprintf(['Done!\n']);
-            
+
       obj = obj.calcGOF();% goodness-of-fit
     end
     
@@ -266,7 +267,7 @@
       spike_ind = find(obj.y);           
       numISIs = length(spike_ind)-1;
 
-      try
+%       try
         
         if numISIs<3, error('Too few data points for goodness-of-fit'); end
         
@@ -288,11 +289,11 @@
         ks_stat = max(abs(aCDF-eCDF));
         ks_ci = 1.96/sqrt(numISIs+1);
       
-      catch
-          z = [];
-          ks_stat = NaN;
-          ks_ci = NaN;
-      end
+%       catch
+%           z = [];
+%           ks_stat = NaN;
+%           ks_ci = NaN;
+%       end
       
       obj.rsISI = z;
       
@@ -664,11 +665,12 @@
  
       %   Conditional intensity function
       subplot(2,3,1);
-      if nargin<2, obj.cif_plot(); else, obj.cif_plot(d.t); end
+      if nargin<2, obj.cif_plot(); else obj.cif_plot(d.t); end
 
       %   Residual process
-      subplot(2,3,2); obj.res_plot();      
-
+      subplot(2,3,2);
+      if nargin<2, obj.res_plot(); else obj.res_plot(d.t); end
+      
       %   Rescaled ISI dist.
       subplot(2,3,3); obj.isi_plot();
 
@@ -689,9 +691,11 @@
         t = 1:length(obj.CIF); 
         dt = 1;
       else
+        t = t(end-length(obj.CIF)+1:end);
         dt = t(2) - t(1);
       end
-      plot(t,obj.CIF/dt,'color', PLOT_COLOR);      
+      
+      plot(t,obj.CIF/dt,'color', PLOT_COLOR);
       title('$\lambda_t$','interpreter','latex');
       xlabel('time [s]');
       ylabel('[Hz]');
@@ -751,17 +755,17 @@
       title('rescaled ISIs','interpreter','latex');
       xlabel('$z_j$','interpreter','latex');
       ylabel('PDF','interpreter','latex');
-      set(gca,'XTick',[]);
       update_fig();
     end
     
-    function res = res_plot(obj)
+    function res = res_plot(obj, t)
       global PLOT_COLOR
       sum_CIF=cumsum(obj.CIF);
       num_spks=cumsum(obj.y);
       res = num_spks - sum_CIF;
-      T = length(res); dt = 1;
-      plot((1:T)*dt, res, 'color', PLOT_COLOR, 'LineWidth', 2);
+      if nargin<2, t = (1:length(res));
+      else t = t(end-length(res)+1:end); end
+      plot(t, res, 'color', PLOT_COLOR, 'LineWidth', 2);
       title('residual process');
       ylabel('observed - estimated');
       xlabel('time [s]');
