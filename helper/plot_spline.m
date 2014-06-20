@@ -1,4 +1,4 @@
-function [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z, do_mask)
+function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
 %   plot_spline.m
 %   [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z)
 %   knots: partition of the covariate axis
@@ -25,12 +25,12 @@ function [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z, do_mask)
     % tension matrix
     s_coeff = [-s  2-s s-2  s; 2*s s-3 3-2*s -s; ...
                -s   0   s   0;   0   1   0   0];
-    
+
     % covariate axis
     tau = knots(1):dtau:knots(end);
     N_knots = length(knots);
     NT = length(tau);
-       
+    
     % set X0 based on knots        
     X0 = zeros(NT,N_knots+2);
     
@@ -42,7 +42,7 @@ function [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z, do_mask)
         count = count+spacing(i);
     end
     X0(end, i:i+3) = [1 1 1 1] * s_coeff; % alpha = 1
-                          
+    
     % get spline values
     y = X0*b;
     
@@ -50,6 +50,7 @@ function [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z, do_mask)
     if do_conf_int
         y_hi = X0*b + 2*sqrt(diag(X0*W*X0'));
         y_lo = X0*b - 2*sqrt(diag(X0*W*X0'));
+        covr = X0*W*X0';
         
         if do_mask
             ind = find(y_hi'>0 & y_lo'<0);
