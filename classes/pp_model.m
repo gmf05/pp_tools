@@ -22,7 +22,7 @@
 %     INPUT: point process data (d), parameters (p)
 %     OUPUT: estimated point process model (m)
 %
-%     m.gof(d)
+%     m.gof_plot(d)
 %     Shows goodness-of-fit summary for model m
 %     INPUT: point process data (d)
 %
@@ -641,7 +641,7 @@
 
     function gof_plot(obj, d)      
 %
-%	pp_model.gof(d, p)
+%	pp_model.gof_plot(d)
 %
 %	pp_gof.m
 %	Part of the Point Process Toolbox
@@ -649,7 +649,6 @@
 %	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	INPUTS:-------------------------------
 %	d: a point process data object
-%	p: a point process parameters object
 %
 %	DESCRIPTION:---------------------------
 %   Visualizes the goodness of fit of a point process model based on
@@ -661,22 +660,11 @@
 %   theorem to compare the rescaled ISIs to an Exp[1] distribution
 %   as well as calculates their (partial/) autocorrelation.
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      global PLOT_COLOR
-      
-      if nargin<2, 
-        t_axis = 1:length(obj.y);
-        dt = 1;
-      else
-        [t_axis,~,dt] = d.get_time();
-      end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
  
       %   Conditional intensity function
-      subplot(2,3,1); hold on;
-      plot(t_axis(1:length(obj.CIF)),obj.CIF/dt,PLOT_COLOR);      
-      title('$\lambda_t$','interpreter','latex');
-      xlabel('time [s]');
-      ylabel('[Hz]');
+      subplot(2,3,1);
+      if nargin<2, obj.cif_plot(); else, obj.cif_plot(d.t); end
 
       %   Residual process
       subplot(2,3,2); obj.res_plot();      
@@ -691,22 +679,27 @@
       subplot(2,3,5); obj.qq_plot();
 
       %   Autocorrelation
-      subplot(2,3,6); hold on;
-      numLags=min(200,numISIs-1);
-      [ac,lags,bounds]=autocorr2(obj.rsISI,numLags,round(0.3*numLags),2);
-      plot(lags, ac, [PLOT_COLOR 'x']); hold on
-      plot(lags,bounds(1),'r--','LineWidth', 2);
-      plot(lags,bounds(2),'r--','LineWidth', 2);
-      title('autocorrelation');
-      xlabel('lags');
-
-      update_fig();      
+      subplot(2,3,6); obj.ac_plot();
+     
     end
     
-    function [ks_stat, ks_ci] = ks_plot(obj, p)
+    function cif_plot(obj, t)
       global PLOT_COLOR
-      if nargin<2, rs = 'exp'; else rs = p.rs; end
+      if nargin<2
+        t = 1:length(obj.CIF); 
+        dt = 1;
+      else
+        dt = t(2) - t(1);
+      end
+      plot(t,obj.CIF/dt,'color', PLOT_COLOR);      
+      title('$\lambda_t$','interpreter','latex');
+      xlabel('time [s]');
+      ylabel('[Hz]');
+      update_fig();
+    end
       
+    function [ks_stat, ks_ci] = ks_plot(obj)
+      global PLOT_COLOR     
       %   calculate ks statistic, confidence bounds
       numISIs = length(obj.rsISI);      
       if numISIs>2
@@ -775,9 +768,18 @@
       update_fig();
     end
     
+    function ac = ac_plot(obj)
+      global PLOT_COLOR
+      numISIs = length(obj.rsISI);
+      numLags=min(200,numISIs-1);
+      [ac,lags,bounds]=autocorr2(obj.rsISI,numLags,round(0.3*numLags),2);
+      plot(lags, ac, [PLOT_COLOR 'x']); hold on
+      plot(lags,bounds(1),'r--','LineWidth', 2);
+      plot(lags,bounds(2),'r--','LineWidth', 2);
+      title('autocorrelation');
+      xlabel('lags');
+      update_fig();
+    end
   end
-  
-  end
-
-
-   
+end
+       
