@@ -24,14 +24,16 @@ classdef pp_params
     response % channel being modeled
     fit_method % 'glmfit', 'filt', or 'smooth'
     link % link function for glmfit (default 'log')
+    rs % how to rescale interspike intervals ('exp' default or 'identity')
     noise % noise (i.e. Kalman gain) parameters for filter/smoother
     s % tension parameter for spline interpolation (default s = 0.5)
     window % (default window = [1 0.2])
     downsample_est % factor for downsampling estimates (default 1)
+    
   end
   
   methods
-    function obj = pp_params(names,channels,knots,bases,fit_method,noise)
+    function obj = pp_params(names,channels,knots,bases,fit_method,rs,noise)
       if nargin<1, names = {}; end
       if nargin<2, channels = {}; end
       if nargin<3, knots = {}; end
@@ -39,7 +41,8 @@ classdef pp_params
       if nargin<5, fit_method = 'glmfit'; end      
       if isequal(fit_method, 'glmfit'), obj.link = 'log';
         else obj.link = ''; end
-      if nargin<6, noise=[]; end
+      if nargin<6, rs = 'exp'; end
+      if nargin<7, noise=[]; end
       
       obj.covariate_names = names;
       obj.covariate_channels = channels;
@@ -47,6 +50,7 @@ classdef pp_params
       obj.covariate_bases = bases;
       obj.covariate_ind = {};
       obj.fit_method = fit_method;
+      obj.rs = rs;
       obj.noise = noise;
       obj.response = 1;
       

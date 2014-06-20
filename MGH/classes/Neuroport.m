@@ -117,8 +117,8 @@ classdef Neuroport
       
       if T>1
         title(num2str(t));
-        pause(0.005);
-        hold off;
+        pause(0.002);
+        hold off; clf;
       end
     end
   end

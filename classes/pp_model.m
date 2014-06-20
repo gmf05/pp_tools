@@ -1,4 +1,4 @@
-classdef pp_model
+  classdef pp_model
 %
 %   properties
 %     b % parameters (column vector)
@@ -44,6 +44,7 @@ classdef pp_model
     LL % log-likelihood
     dev % deviance 
     AIC % Akaike information criterion (penalized LL)    
+    rs % how to rescale inter-spike-intervals ('exp' default or 'identity')
     rsISI % rescaled inter-spike-intervals ("waiting times")
     KS % Kolmogorov-Smirnov statistic (are rescaled ISI uniform?)
   end
@@ -256,8 +257,7 @@ classdef pp_model
       obj = obj.calcGOF();% goodness-of-fit
     end
     
-    function obj = calcGOF(obj)
-      global RESCALE_FUNC
+    function obj = calcGOF(obj, p)      
       obj.LL = sum(log(poisspdf(obj.y,obj.CIF)));
       obj.dev = 2*(sum(log(poisspdf(obj.y,obj.y))) - obj.LL);
       obj.AIC = obj.dev+2*size(obj.b,1);
@@ -266,37 +266,34 @@ classdef pp_model
       spike_ind = find(obj.y);           
       numISIs = length(spike_ind)-1;
 
-      if numISIs>2
+      try
+        
+        if numISIs<3, error('Too few data points for goodness-of-fit'); end
+        
         z = zeros(1, numISIs);
         for j=1:numISIs                                                
           z(j) = sum(obj.CIF(spike_ind(j)+1:spike_ind(j+1)));
-        end        
-        switch RESCALE_FUNC
-          case 'exp'                        
-            rs_fn = @(x)(1-exp(-x));
-            rs_cdf = @(x)(unifcdf(x,0,1));
-          case 'identity'
-            rs_fn = @(x)(x);
-            rs_cdf = @(x)(expcdf(x,1));
         end
-        z = rs_fn(z);
-
-        try
-          [eCDF,xCDF] = ecdf(sort(z));
-          aCDF = rs_cdf(xCDF);
-          ks_stat = max(abs(aCDF-eCDF));
-          ks_ci = 1.96/sqrt(numISIs+1);
-        catch
+        
+        switch obj.rs
+          case 'idenity'
+            rs_cdf = @(z)(expcdf(z));
+          case 'exp'
+            z = 1-exp(-z);
+            rs_cdf = @(z)(unifcdf(z,0,1));
+        end
+        
+        [eCDF,xCDF] = ecdf(sort(z));
+        aCDF = rs_cdf(xCDF);
+        ks_stat = max(abs(aCDF-eCDF));
+        ks_ci = 1.96/sqrt(numISIs+1);
+      
+      catch
           z = [];
           ks_stat = NaN;
           ks_ci = NaN;
-        end
-      else
-        z = [];
-        ks_stat = NaN;
-        ks_ci = NaN;
       end
-
+      
       obj.rsISI = z;
       
       % compute p-value for ks-statistic (from kstest2.m):
@@ -642,7 +639,7 @@ classdef pp_model
       update_fig(); % change font size, interpreter
     end
 
-    function gof(obj, d)      
+    function gof_plot(obj, d)      
 %
 %	pp_model.gof(d, p)
 %
@@ -666,7 +663,6 @@ classdef pp_model
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       global PLOT_COLOR
-      global RESCALE_FUNC
       
       if nargin<2, 
         t_axis = 1:length(obj.y);
@@ -674,27 +670,7 @@ classdef pp_model
       else
         [t_axis,~,dt] = d.get_time();
       end
-      numISIs = length(obj.rsISI);
-
-      %   calculate ks statistic, confidence bounds      
-      if numISIs>2
-        [eCDF,xCDF] = ecdf(sort(obj.rsISI));
-        switch RESCALE_FUNC
-        case 'identity'
-          mycdf = @(x)(expcdf(x,1));
-        case 'exp'
-          mycdf = @(x)(unifcdf(x,0,1));
-        end        
-        aCDF = mycdf(xCDF);                    
-        ks_stat = max(abs(aCDF-eCDF));
-        ks_ci = 1.96/sqrt(numISIs+1);
-      else
-        ks_stat = NaN;
-        ks_ci = NaN;
-        fprintf('Error: Too few events in data for GoF analysis\n');
-        return;
-      end      
-
+ 
       %   Conditional intensity function
       subplot(2,3,1); hold on;
       plot(t_axis(1:length(obj.CIF)),obj.CIF/dt,PLOT_COLOR);      
@@ -703,45 +679,16 @@ classdef pp_model
       ylabel('[Hz]');
 
       %   Residual process
-      subplot(2,3,2); hold on;
-      sum_CIF=cumsum(obj.CIF);
-      num0t=cumsum(obj.y);
-      plot(t_axis(end-length(obj.CIF)+1:end),num0t(end-length(obj.CIF)+1:end)-sum_CIF,PLOT_COLOR,'LineWidth',2);
-      title('residual process');
-      ylabel('$N(t) - N(t)$');
-      xlabel('time [s]');
+      subplot(2,3,2); obj.res_plot();      
 
       %   Rescaled ISI dist.
-      subplot(2,3,3); hold on;
-      [yh,xh]=hist(obj.rsISI);
-      bar(xh,yh./length(obj.rsISI));
-      title('rescaled ISIs','interpreter','latex');
-      xlabel('$z_j$','interpreter','latex');
-      ylabel('PDF','interpreter','latex');
-      set(gca,'XTick',[]);
+      subplot(2,3,3); obj.isi_plot();
 
-      %   KS plot (Exp[1] vs rescaled ISI dist.)
-      subplot(2,3,4); hold on;
-      plot(eCDF, aCDF, PLOT_COLOR, 'LineWidth', 2); hold on;
-      plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
-          'r-', [0:0.2:1], [0:0.2:1], 'r-', 'LineWidth', 3);
-      set(gca,'XTick',[0:0.2:1]);
-      set(gca,'YTick',[0:0.2:1]);
-      title('KS plot');
-      xlabel('Quantiles');
-      ylabel('CDF');
-      text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
-      text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
-
-      % Rotated KS plot
-      % show correlation among residual and some covarite(s)???
-      subplot(2,3,5); hold on;  
-      plot(xCDF,aCDF-eCDF,PLOT_COLOR,'LineWidth',2);
-      hold on;
-      plot([0,1],[ks_ci ks_ci],'r', 'LineWidth',2);
-      plot([0,1],[-ks_ci -ks_ci],'r', 'LineWidth',2);
-      xlim([0,1]);
-      title('KS plot (rotated)');
+      %   KS plot (Theoretical vs actual dist. of rescaled ISI)
+      subplot(2,3,4); obj.ks_plot();
+      
+      %   QQ plot
+      subplot(2,3,5); obj.qq_plot();
 
       %   Autocorrelation
       subplot(2,3,6); hold on;
@@ -756,20 +703,20 @@ classdef pp_model
       update_fig();      
     end
     
-    function ks_plot(obj)
+    function [ks_stat, ks_ci] = ks_plot(obj, p)
       global PLOT_COLOR
-      global RESCALE_FUNC
+      if nargin<2, rs = 'exp'; else rs = p.rs; end
       
-      numISIs = length(obj.rsISI);
-      %   calculate ks statistic, confidence bounds      
+      %   calculate ks statistic, confidence bounds
+      numISIs = length(obj.rsISI);      
       if numISIs>2
         [eCDF,xCDF] = ecdf(sort(obj.rsISI));
-        switch RESCALE_FUNC
+        switch obj.rs
         case 'identity'
           mycdf = @(x)(expcdf(x,1));
         case 'exp'
           mycdf = @(x)(unifcdf(x,0,1));
-        end        
+        end
         aCDF = mycdf(xCDF);                    
         ks_stat = max(abs(aCDF-eCDF));
         ks_ci = 1.96/sqrt(numISIs+1);
@@ -780,19 +727,57 @@ classdef pp_model
         return;
       end
 
-      %   KS plot (e.g. Exp[1] vs rescaled ISI dist.)
-      plot(eCDF, aCDF, PLOT_COLOR, 'LineWidth', 2); hold on;
+      % plotting
+      plot(eCDF, aCDF, 'color', PLOT_COLOR, 'LineWidth', 2); hold on;
       plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
           'r-', [0:0.2:1], [0:0.2:1], 'r-', 'LineWidth', 3);
       set(gca,'XTick',[0:0.2:1]);
       set(gca,'YTick',[0:0.2:1]);
       title('KS plot');
-      xlabel('Quantiles');
-      ylabel('CDF');
+      xlabel('Emp. Quantiles');
+      ylabel('Theor. CDF');
       text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
       text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
       update_fig();
     end
       
+  
+    function qq_plot(obj)
+      global PLOT_COLOR
+      plot(0,0,'color',PLOT_COLOR);
+      title('QQ plot');
+      xlabel('x');
+      ylabel('y');
+      update_fig();
+    end
+    
+    
+    function isi_plot(obj)
+      [yh,xh]=hist(obj.rsISI);
+      bar(xh,yh./length(obj.rsISI));
+      title('rescaled ISIs','interpreter','latex');
+      xlabel('$z_j$','interpreter','latex');
+      ylabel('PDF','interpreter','latex');
+      set(gca,'XTick',[]);
+      update_fig();
+    end
+    
+    function res = res_plot(obj)
+      global PLOT_COLOR
+      sum_CIF=cumsum(obj.CIF);
+      num_spks=cumsum(obj.y);
+      res = num_spks - sum_CIF;
+      T = length(res); dt = 1;
+      plot((1:T)*dt, res, 'color', PLOT_COLOR, 'LineWidth', 2);
+      title('residual process');
+      ylabel('observed - estimated');
+      xlabel('time [s]');
+      update_fig();
+    end
+    
   end
-end
+  
+  end
+
+
+   
