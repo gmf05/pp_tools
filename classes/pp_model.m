@@ -704,6 +704,9 @@
       
     function [ks_stat, ks_ci] = ks_plot(obj)
       global PLOT_COLOR     
+      Z = 1.96; 
+      % Z = 1.63;
+      % Z = 1.36;
       %   calculate ks statistic, confidence bounds
       numISIs = length(obj.rsISI);      
       if numISIs>2
@@ -716,7 +719,7 @@
         end
         aCDF = mycdf(xCDF);                    
         ks_stat = max(abs(aCDF-eCDF));
-        ks_ci = 1.96/sqrt(numISIs+1);
+        ks_ci = Z/sqrt(numISIs+1);
       else
         ks_stat = NaN;
         ks_ci = NaN;
@@ -731,23 +734,36 @@
       set(gca,'XTick',[0:0.2:1]);
       set(gca,'YTick',[0:0.2:1]);
       title('KS plot');
-      xlabel('Emp. Quantiles');
-      ylabel('Theor. CDF');
+      xlabel('Empirical CDF');
+      ylabel('Theoretical CDF');
       text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
       text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
       update_fig();
     end
       
   
-    function qq_plot(obj)
+    function [qx, qz] = qq_plot(obj)
       global PLOT_COLOR
-      plot(0,0,'color',PLOT_COLOR);
-      title('QQ plot');
-      xlabel('x');
-      ylabel('y');
-      update_fig();
+      z = sort(obj.rsISI);
+      if length(z)<2
+        return;
+      else
+        I = 0:.05:1;
+        qz = quantile(z,I);
+        switch obj.rs
+        case 'identity'
+          qx = quantile(exppdf(I,1),I);
+        case 'exp'          
+          qx = quantile(unifcdf(I,0,1),I);
+        end
+        plot(qx,qz,'color',PLOT_COLOR); hold on;
+        plot(0:0.2:1,0:0.2:1,'r--','LineWidth',3);
+        title('QQ plot');
+        xlabel('Empirical quant.');
+        ylabel('Theoretical quant.');
+        update_fig();
+      end
     end
-    
     
     function isi_plot(obj)
       [yh,xh]=hist(obj.rsISI);

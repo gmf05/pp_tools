@@ -181,22 +181,22 @@ classdef Neuroport
   end  
   
   function [D, WD] = spline_dir2(obj, multiknots, b, W)
-    % initialize variables
-    s = 0.5;
-    [Ws, ys, Ls] = spline_cov(multiknots,b,W,s);
-    
-    N0 = length(Ls{1});
-    i1=1:N0;
-    i2=i1(end)+(1:N0);
-    i3=i2(end)+(1:N0);
-    i4=i3(end)+(1:N0);
-        
-    D = [ys{3} - ys{4}; ys{2} - ys{1}];
-    WD = zeros(2,2,N0);
-    WD(1,1,:) = diag(Ws(i3,i3))' + diag(Ws(i4,i4))' - 2 *diag(Ws(i3,i4))';
-    WD(2,2,:) = diag(Ws(i1,i1))' + diag(Ws(i2,i2))' - 2 *diag(Ws(i1,i2))';
-    WD(1,2,:) = diag(Ws(i2,i3))' - diag(Ws(i2,i4))' - diag(Ws(i1,i3))' + diag(Ws(i1,i4))';
-    WD(2,1,:) = WD(1,2,:);
+%     % initialize variables
+%     s = 0.5;
+%     [Ws, ys, Ls] = spline_cov(multiknots,b,W,s);
+%     
+%     N0 = length(Ls{1});
+%     i1=1:N0;
+%     i2=i1(end)+(1:N0);
+%     i3=i2(end)+(1:N0);
+%     i4=i3(end)+(1:N0);
+%         
+%     D = [ys{3} - ys{4}; ys{2} - ys{1}];
+%     WD = zeros(2,2,N0);
+%     WD(1,1,:) = diag(Ws(i3,i3))' + diag(Ws(i4,i4))' - 2 *diag(Ws(i3,i4))';
+%     WD(2,2,:) = diag(Ws(i1,i1))' + diag(Ws(i2,i2))' - 2 *diag(Ws(i1,i2))';
+%     WD(1,2,:) = diag(Ws(i2,i3))' - diag(Ws(i2,i4))' - diag(Ws(i1,i3))' + diag(Ws(i1,i4))';
+%     WD(2,1,:) = WD(1,2,:);
     
   end
   
