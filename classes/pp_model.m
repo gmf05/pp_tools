@@ -752,7 +752,7 @@
         qz = quantile(z,I);
         switch obj.rs
         case 'identity'
-          qx = quantile(exppdf(I,1),I);
+          qx = quantile(expcdf(I,1),I);
         case 'exp'          
           qx = quantile(unifcdf(I,0,1),I);
         end
