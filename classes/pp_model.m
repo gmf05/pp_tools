@@ -752,9 +752,11 @@
         qz = quantile(z,I);
         switch obj.rs
         case 'identity'
-          qx = quantile(expcdf(I,1),I);
+%           qx = quantile(expcdf(I,1),I);
+          qx = expinv(I,1);
         case 'exp'          
-          qx = quantile(unifcdf(I,0,1),I);
+%           qx = quantile(unifcdf(I,0,1),I);
+          qx = unifinv(I,0,1);
         end
         plot(qx,qz,'color',PLOT_COLOR); hold on;
         plot(0:0.2:1,0:0.2:1,'r--','LineWidth',3);
