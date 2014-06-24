@@ -730,7 +730,7 @@
       % plotting
       plot(eCDF, aCDF, 'color', PLOT_COLOR, 'LineWidth', 2); hold on;
       plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
-          'r-', [0:0.2:1], [0:0.2:1], 'r-', 'LineWidth', 3);
+          'r-', [0:0.2:1], [0:0.2:1], 'r--', 'LineWidth', 3);
       set(gca,'XTick',[0:0.2:1]);
       set(gca,'YTick',[0:0.2:1]);
       title('KS plot');
