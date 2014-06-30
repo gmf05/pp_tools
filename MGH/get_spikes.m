@@ -135,8 +135,8 @@ switch data_type
 
   %-------------------------- local field potential (LFP)
   case 'LFP'
-  fH = [0   299.5   300.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
-  fL = [1  200  200.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
+  fH = [0   0.5   1   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
+  fL = [0  200  200.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
   fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
   fS2 = [0  119.0 119.5 120.5  121.0  fNQ]/fNQ; zS2 = [1  1  0  0  1 1]/fNQ; % Stop2
   fS3 = [0  179.0 179.5 180.5  181.0  fNQ]/fNQ; zS3 = [1  1  0  0  1 1]/fNQ; % Stop3

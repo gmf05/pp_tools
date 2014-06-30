@@ -1,5 +1,5 @@
 patient_name = 'MG49';
-seizure_name = 'Seizure36';
+seizure_name = 'Seizure45';
 data_type = 'LFP';
 thresh = 1;
 N = Neuroport(patient_name);
@@ -8,15 +8,16 @@ load([data_name '_filtered']); d_post = d'; time = t;
 
 doSave = false;
 if doSave
-  VW = VideoWriter([patient_name '_' seizure_nam '_late.avi']);
+  VW = VideoWriter([patient_name '_' seizure_nam '_new1.avi']);
   VW.open();
 end
 
 
 %%
+tmin = 105; tmax = 110;
 % tmin = 115; tmax = 125;
 % tmin = 120; tmax = 122;
-tmin = 120; tmax = 125;
+% tmin = 120; tmax = 125;
 % tmin = 80; tmax = 90;
 
 min_refract = 0.3*3e4;
@@ -29,14 +30,15 @@ spike_dn = zeros(N.N_electrodes,T);
 for n = 1:N.N_electrodes
 % for n = [1 10 20]
   [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
-  [sortAmp,sortI] = sort(amp);
-  dropI = [];
-  for j = 2:length(amp)
-    if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
-      dropI = [dropI sortI(j)];
-    end
-  end
-  ind(dropI) = [];
+% % % only keep big spikes
+%   [sortAmp,sortI] = sort(amp);
+%   dropI = [];
+%   for j = 2:length(amp)
+%     if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
+%       dropI = [dropI sortI(j)];
+%     end
+%   end
+%   ind(dropI) = [];
 
   spike_dn(n,ind) = 1;
 %   amps{n} = amp;
@@ -58,7 +60,8 @@ end
 % mx = max(max(Ws));
 % cax = [mn mx];
 % cax = [-4 4];
-cax = [4 -6];
+% cax = [4 -6];
+cax = [2 -4];
 C = cax(2)-cax(1);
 R = 0.5;
 theta = 0:0.01:2*pi;
@@ -68,7 +71,6 @@ clf, set(gcf,'units','normalized','position',[0 0 1 1]);
 set(gca,'XTick',[]);
 set(gca,'YTick',[]);
 colormap('default'), color_RGB = colormap();
-
 
 % tmn = 105; tmx = 110;
 tmn = time_W(1); tmx = time_W(end);
