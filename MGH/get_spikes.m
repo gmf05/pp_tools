@@ -36,10 +36,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
           case 'ECoG'
             szX = sz.ECoG;
             t = sz.ECoG.Time;
-          case 'LFP'
-            szX = sz.LFP;
-            t = sz.LFP.Time;
-          case 'MUA'
+          case {'LFP','MUA'}
             sz.X = sz.LFP;
             t = sz.LFP.Time;
         end
@@ -50,10 +47,10 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
         d = szX.Data;
-        start_ind = getclosest(t,szX.Onset);
-        end_ind = getclosest(t,t(end)-szX.Offset);
-        t = t(start_ind:end_ind) - t(start_ind);
-        d = d(start_ind:end_ind,:);
+%         start_ind = getclosest(t,szX.Onset);
+%         end_ind = getclosest(t,t(end)-szX.Offset);
+%         t = t(start_ind:end_ind) - t(start_ind);
+%         d = d(start_ind:end_ind,:);
         
         % printing progress
         for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end

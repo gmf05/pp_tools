@@ -61,7 +61,8 @@ classdef pp_data
       labels = {obj.labels{ind}};
       obj2 = pp_data(dn,obj.t,'name',obj.name,'labels',labels);
       if ~isempty(obj.marks)
-        obj2.marks = obj.marks(ind,:);
+        obj2.marks = {obj.marks{ind}}; % for cell
+%         obj2.marks = obj.marks(ind,:); % for matrix
       end          
     end
     
