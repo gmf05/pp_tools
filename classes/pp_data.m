@@ -382,7 +382,7 @@ classdef pp_data
       end
     end
     
-    function obj0 = spike_sort(obj,thresh,lockout)
+    function obj0 = sort_mean_time(obj,thresh,lockout)
       % 
       psth = sum(obj.dn);
       spkInd = find(psth);
