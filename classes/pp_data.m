@@ -194,7 +194,27 @@ classdef pp_data
           xlabel('time [s]','fontsize',FONT_SIZE);
           ylabel('channel','fontsize',FONT_SIZE);
           title([ttl ' raster plot']);
-      end      
+          
+        case 'raster-marks'
+          min_mark = min([obj.marks{:}]);
+          max_mark = max([obj.marks{:}]);
+          cstart = [1 0 0]; % red
+          cend = [0 0 1]; % blue
+          colors = interpolateColor(cstart, cend, max_mark-min_mark+1);
+          for i = 1:obj.N_channels
+            ind = find(obj.dn(i,:));
+            for k = 1:length(ind)
+              mk = obj.marks{i}(k);
+              mkind = mk - min_mark + 1;
+              col = colors(mkind,:);
+              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'color', col); hold on;
+            end
+          end
+          xlabel('time [s]','fontsize',FONT_SIZE);
+          ylabel('channel','fontsize',FONT_SIZE);
+          title([ttl ' raster plot']);
+          
+      end
       update_fig();
     end
 
@@ -305,6 +325,105 @@ classdef pp_data
       obj0.dn = dn_jitter;
     end
     
+    
+    function spkInfo = raster_ind(obj)
+      psth = sum(obj.dn);
+      spkInd = find(psth);
+      N_spks = sum(psth);
+      spkInfo = zeros(N_spks,2);
+      count=0;
+      for n = spkInd
+        temp = find(obj.dn(:,n));        
+        N = length(temp);
+        spkInfo(count+(1:N),1) = n;
+        spkInfo(count+(1:N),2) = temp;
+        count = count+N;
+      end
+    end
+      
+    function spike_trigger_plot(obj,thresh,lockout)
+      % 
+      psth = sum(obj.dn);
+      spkInd = find(psth);
+      N_spks = sum(psth);
+      spkInfo = zeros(N_spks,2);
+      count=0;
+      for n = spkInd
+        temp = find(obj.dn(:,n));        
+        N = length(temp);
+        spkInfo(count+(1:N),1) = n;
+        spkInfo(count+(1:N),2) = temp;
+        count = count+N;
+      end
+      
+% %       % against-all-spikes
+%       figure(1);
+%       global PLOT_COLOR
+%       PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
+      
+      istart=1;
+      while istart < N_spks
+        tstart = spkInfo(istart,1);
+        iend=istart+1;
+        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
+          iend=iend+1;
+        end
+        iend = iend-1;
+        tend = spkInfo(iend,1);
+        Nchan = length(unique(spkInfo(istart:iend,2)));
+        if Nchan>=thresh
+%           figure(2);
+          obj.sub_time(tstart:tend).reset_time().plot('raster'); hold on;
+%           figure(1);
+%           obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
+          pause();
+        end
+        istart = iend+1;
+      end
+    end
+    
+    function obj0 = spike_sort(obj,thresh,lockout)
+      % 
+      psth = sum(obj.dn);
+      spkInd = find(psth);
+      N_spks = sum(psth);
+      spkInfo = zeros(N_spks,2);
+      count=0;
+      for n = spkInd
+        temp = find(obj.dn(:,n));        
+        N = length(temp);
+        spkInfo(count+(1:N),1) = n;
+        spkInfo(count+(1:N),2) = temp;
+        count = count+N;
+      end
+       
+      istart=1;
+      while istart < N_spks
+        tstart = spkInfo(istart,1);
+        iend=istart+1;
+        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
+          iend=iend+1;
+        end
+        iend = iend-1;
+        tend = spkInfo(iend,1);
+        Nchan = length(unique(spkInfo(istart:iend,2)));
+        if Nchan>=thresh
+          if ~exist('objcat','var')
+            objcat = obj.sub_time(tstart:tend).reset_time();
+          else
+            objcat = objcat.concat(obj.sub_time(tstart:tend).reset_time());
+          end
+        end
+        istart = iend+1;
+      end
+      
+      srt = zeros(1,obj.N_channels);
+      for cspk = 1:obj.N_channels
+        srt(cspk) = mean(objcat.t(find(objcat.dn(cspk,:))));
+      end
+      [~,ord] = sort(srt);
+      obj0 = obj.sub_data(ord);
+    end
+    
   end
-  
 end

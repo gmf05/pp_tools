@@ -18,9 +18,12 @@ function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
     % standard axis partition is by 1 unit
     % unless range of axis < 1 -- then .01    
     
-    if  range(knots)>1000, dtau = 2;
-    elseif range(knots)>1, dtau = 1; 
-    elseif range(knots) dtau = 1e-2; end;
+%     if  range(knots)>1000, dtau = 2;
+%     elseif range(knots)>1, dtau = 1;
+%     elseif range(knots) dtau = 1e-2; end;
+    
+    if range(knots)>1, dtau = 1;
+    else dtau = 1e-2; end;
     
     % tension matrix
     s_coeff = [-s  2-s s-2  s; 2*s s-3 3-2*s -s; ...

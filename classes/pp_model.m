@@ -736,8 +736,8 @@
       title('KS plot');
       xlabel('Empirical CDF');
       ylabel('Theoretical CDF');
-      text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
-      text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
+%       text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
+%       text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
       update_fig();
     end
       
