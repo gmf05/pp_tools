@@ -58,7 +58,7 @@ classdef pp_data
     function obj2 = sub_data(obj,ind)      
       % check list ind to make sure entries are valid??
       dn = obj.dn(ind,:);
-      labels = {obj.labels{ind}};
+      if ~isempty(obj.labels), labels = {obj.labels{ind}}; else labels = {}; end
       obj2 = pp_data(dn,obj.t,'name',obj.name,'labels',labels);
       if ~isempty(obj.marks)
         obj2.marks = {obj.marks{ind}}; % for cell
@@ -360,6 +360,10 @@ classdef pp_data
 %       figure(1);
 %       global PLOT_COLOR
 %       PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
+
+      % shifting trigger start and end by dL, dR 
+      dL = 0.2; dR = 0.2; % [sec]
+      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
       
       istart=1;
       while istart < N_spks
@@ -367,13 +371,13 @@ classdef pp_data
         iend=istart+1;
         while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
           iend=iend+1;
-        end
+        end        
         iend = iend-1;
         tend = spkInfo(iend,1);
         Nchan = length(unique(spkInfo(istart:iend,2)));
         if Nchan>=thresh
 %           figure(2);
-          obj.sub_time(tstart:tend).reset_time().plot('raster'); hold on;
+          obj.sub_time(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
 %           figure(1);
 %           obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
           pause();
