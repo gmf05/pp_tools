@@ -198,14 +198,15 @@ classdef pp_data
         case 'raster-marks'
           min_mark = min([obj.marks{:}]);
           max_mark = max([obj.marks{:}]);
+          Nsteps = 64;
           cstart = [1 0 0]; % red
           cend = [0 0 1]; % blue
-          colors = interpolateColor(cstart, cend, max_mark-min_mark+1);
+          colors = interpolateColor(cstart, cend, Nsteps);
           for i = 1:obj.N_channels
             ind = find(obj.dn(i,:));
             for k = 1:length(ind)
               mk = obj.marks{i}(k);
-              mkind = mk - min_mark + 1;
+              mkind = ceil((mk - min_mark)/(max_mark-min_mark)*Nsteps);
               col = colors(mkind,:);
               plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'color', col); hold on;
             end
@@ -342,6 +343,51 @@ classdef pp_data
     end
       
     function spike_trigger_plot(obj,thresh,lockout)
+      % 
+      psth = sum(obj.dn);
+      spkInd = find(psth);
+      N_spks = sum(psth);
+      spkInfo = zeros(N_spks,2);
+      count=0;
+      for n = spkInd
+        temp = find(obj.dn(:,n));        
+        N = length(temp);
+        spkInfo(count+(1:N),1) = n;
+        spkInfo(count+(1:N),2) = temp;
+        count = count+N;
+      end
+      
+% %       % against-all-spikes
+%       figure(1);
+%       global PLOT_COLOR
+%       PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
+
+      % shifting trigger start and end by dL, dR 
+      dL = 0.2; dR = 0.2; % [sec]
+      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+      
+      istart=1;
+      while istart < N_spks
+        tstart = spkInfo(istart,1);
+        iend=istart+1;
+        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
+          iend=iend+1;
+        end        
+        iend = iend-1;
+        tend = spkInfo(iend,1);
+        Nchan = length(unique(spkInfo(istart:iend,2)));
+        if Nchan>=thresh
+%           figure(2);
+          obj.sub_time(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
+%           figure(1);
+%           obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
+          pause();
+        end
+        istart = iend+1;
+      end
+    end
+    
+    function spike_trigger_plot2(obj,thresh,lockout)
       % 
       psth = sum(obj.dn);
       spkInd = find(psth);

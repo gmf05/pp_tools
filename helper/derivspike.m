@@ -11,7 +11,7 @@ minInd = find(dD(1:end-1)<0 & dD(2:end)>=0);
 % keep places where 2nd deriv is > d2thresh
 spikeInd = [];
 for i = 1:length(minInd)
-  if d2D(minInd(i)+1)>d2thresh, spikeInd(end+1) = minInd(i); end;
+  if d2D(minInd(i))>d2thresh, spikeInd(end+1) = minInd(i); end;
 end
 
 % amps = D(spikeInd);
