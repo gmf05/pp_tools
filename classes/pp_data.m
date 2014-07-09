@@ -220,6 +220,7 @@ classdef pp_data
     end
     
     function obj0 = remove_outlier_counts(obj)
+      counts = sum(obj.dn,2);
       [~,goodChan] = removeoutliers(counts);
       obj0 = obj.sub_data(goodChan);
     end
