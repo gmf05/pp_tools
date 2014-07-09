@@ -37,7 +37,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh)
             szX = sz.ECoG;
             t = sz.ECoG.Time;
           case {'LFP','MUA'}
-            sz.X = sz.LFP;
+            szX = sz.LFP;
             t = sz.LFP.Time;
         end
 
