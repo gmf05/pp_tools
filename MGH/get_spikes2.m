@@ -43,7 +43,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
 
         fprintf('Preprocessing...');
         szX.Onset = sz.Onset; szX.Offset = sz.Offset;
-        labels = szX.Labels;
+        labels = str2cell(szX.Labels);
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
         d = szX.Data;
