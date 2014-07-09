@@ -226,7 +226,7 @@ classdef pp_data
     end
 
     function obj = downsample(obj, dT)
-      fprintf(['Downsampling point process data by a factor of ' num2str(dT) 'councounts = sum(obj.dn,2);ts = sum(obj.dn,2);...']);
+      fprintf(['Downsampling point process data by a factor of ' num2str(dT) '...']);
       t_old = obj.t;
       dn_old = obj.dn;
       
