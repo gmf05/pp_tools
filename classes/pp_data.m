@@ -74,9 +74,18 @@ classdef pp_data
         end_ind = getclosest(obj.t,varargin{2});
         ind = beg_ind:end_ind;
       end
+      
+      % get marks within particular time interval
+      for n = 1:obj.N_channels
+        beg_mark = sum(obj.dn(n,1:ind(1)-1))+1;
+        end_mark = sum(obj.dn(n,1:ind(end)));
+        for i = 1:size(obj.marks,1), obj.marks{i,n} = obj.marks{i,n}(beg_mark:end_mark); end
+      end
+      
       obj.dn = obj.dn(:,ind);
       obj.t = obj.t(ind);
       obj.T = length(obj.t);
+      
     end
 
     function [t,T,dt,tmin,tmax] = get_time(obj)
