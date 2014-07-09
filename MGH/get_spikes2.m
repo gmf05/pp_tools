@@ -61,10 +61,9 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
       T = size(d,2);
       dn = 0*d;
       spikes = cell(1,N_channels);
-      amps = cell(1,N_channels);
-      marks = cell(3,N_channels);
+      marks = cell(1,N_channels);
       if ~exist('Fs','var'), Fs = round(1/(t(2)-t(1))); end
-      dW = round(.01*Fs); % how much shift to allow (# bins + or -)
+      dW = round(.05*Fs); % how much shift to allow (# bins + or -)
       
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
@@ -74,15 +73,20 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
         % a spike s gets placed on the interval [s-dW, s+dW]          
         for i = 1:length(spkind)
           i0 = spkind(i) - dW;
-          iend = min(i0+2*dW,T);
-          [~,shft] = min(d(n,i0:iend));
-          spkind(i) = i0 + shft;
+          istart = max(1, spkind(i)-dW);
+          iend = min(spkind(i)+dW, T);
+          [~,shft] = min(d(n,istart:iend));
+          spkind(i) = istart + shft - 1;
         end
+        spkind = unique(spkind);
+        % drop values 1 and 2 from spkind, if there
+        spkind(spkind==1)=[]; spkind(spkind==2)=[];
+        
         % save results
         dn(n,spkind) = 1;
         spikes{n} = t(spkind);
-        d1 = diff(d(n,:)); d2 = diff(d1);
-        marks{1,n} = d(n,spkind); marks{2,n} = d1(spkind+1); marks{3,n} = d2(spkind+2);
+        d1 = diff(d(n,:)); d2 = diff(d1);        
+        marks{n} = [d(n,spkind); d1(spkind-1); d2(spkind-2)];
       end
 
       fprintf('Done!\nSaving spikes...');
@@ -101,7 +105,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
     data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
     data.labels = labels;
     data.name = data_name;
-    data.marks = amps;
+    data.marks = marks;
     
 % %     % downsampling
 % %     switch data_type
@@ -118,6 +122,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
     save(pp_filename, '-v7.3','data');
     fprintf('Done!\n\n');
   end
+end
 
 function d_post = preprocessing(d_pre, data_type)
 

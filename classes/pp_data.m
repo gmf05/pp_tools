@@ -79,7 +79,7 @@ classdef pp_data
       for n = 1:obj.N_channels
         beg_mark = sum(obj.dn(n,1:ind(1)-1))+1;
         end_mark = sum(obj.dn(n,1:ind(end)));
-        for i = 1:size(obj.marks,1), obj.marks{i,n} = obj.marks{i,n}(beg_mark:end_mark); end
+        obj.marks{n} = obj.marks{n}(:,beg_mark:end_mark);
       end
       
       obj.dn = obj.dn(:,ind);
@@ -205,19 +205,21 @@ classdef pp_data
           title([ttl ' raster plot']);
           
         case 'raster-marks'
-          min_mark = min([obj.marks{:}]);
-          max_mark = max([obj.marks{:}]);
+          j=2; % row of mark process
+%           min_mark = min(min([obj.marks{:}]));
+%           max_mark = max(max([obj.marks{:}]));
           Nsteps = 64;
-          cstart = [1 0 0]; % red
-          cend = [0 0 1]; % blue
-          colors = interpolateColor(cstart, cend, Nsteps);
+%           cstart = [1 0 0]; % red
+%           cend = [0 0 1]; % blue
+%           colors = interpolateColor(cstart, cend, Nsteps);
+          colors = colormap(jet);
           for i = 1:obj.N_channels
             ind = find(obj.dn(i,:));
+            marks_norm = normalize(obj.marks{i}(j,:));
+            col_ind = round(marks_norm .* (Nsteps-1)) + 1;
             for k = 1:length(ind)
-              mk = obj.marks{i}(k);
-              mkind = round((mk - min_mark)/(max_mark-min_mark)*(Nsteps-1))+1;
-              col = colors(mkind,:);
-              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'color', col); hold on;
+              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'color', colors(col_ind(k),:),'linewidth',3.5);
+              hold on;
             end
           end
           xlabel('time [s]','fontsize',FONT_SIZE);
