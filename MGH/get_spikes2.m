@@ -58,19 +58,24 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
       N_channels = size(d,1);
+      T = size(d,2);
       dn = 0*d;
       spikes = cell(1,N_channels);
       amps = cell(1,N_channels);
       marks = cell(3,N_channels);
+      if ~exist('Fs','var'), Fs = round(1/(t(2)-t(1))); end
+      dW = round(.01*Fs); % how much shift to allow (# bins + or -)
+      
+      % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
         spkind = derivspike(d(n,:),thresh);
         % post-process spkind to correspond to MINIMA over certain window
-        % a spike s gets placed on the interval [s-dW, s+dW] 
-        dW = round(.01*Fs); % how much shift to allow (# bins + or -)
+        % a spike s gets placed on the interval [s-dW, s+dW]          
         for i = 1:length(spkind)
           i0 = spkind(i) - dW;
-          [~,shft] = min(d(n,i0+(0:2*dW)));
+          iend = min(i0+2*dW,T);
+          [~,shft] = min(d(n,i0:iend));
           spkind(i) = i0 + shft;
         end
         % save results
