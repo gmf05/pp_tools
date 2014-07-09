@@ -218,6 +218,11 @@ classdef pp_data
       end
       update_fig();
     end
+    
+    function obj0 = remove_outlier_counts(obj)
+      [~,goodChan] = removeoutliers(counts);
+      obj0 = obj.sub_data(goodChan);
+    end
 
     function obj = downsample(obj, dT)
       fprintf(['Downsampling point process data by a factor of ' num2str(dT) '...']);
@@ -387,7 +392,7 @@ classdef pp_data
       end
     end
     
-    function spike_trigger_plot2(obj,thresh,lockout)
+    function dcat = spike_trigger_plot2(obj,thresh,lockout)
       % 
       psth = sum(obj.dn);
       spkInd = find(psth);
@@ -403,13 +408,15 @@ classdef pp_data
       end
       
 % %       % against-all-spikes
-%       figure(1);
-%       global PLOT_COLOR
-%       PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
+      figure(1);
+      global PLOT_COLOR
+      PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
 
       % shifting trigger start and end by dL, dR 
       dL = 0.2; dR = 0.2; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+      
+      makeFlag = true;
       
       istart=1;
       while istart < N_spks
@@ -423,9 +430,17 @@ classdef pp_data
         Nchan = length(unique(spkInfo(istart:iend,2)));
         if Nchan>=thresh
 %           figure(2);
-          obj.sub_time(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
-%           figure(1);
-%           obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
+          di = obj.sub_time(tstart-dLbins:tend+dRbins).reset_time();
+          if makeFlag
+            dcat = di;
+            makeFlag = false;
+          else
+            dcat = dcat.concat(di);
+          end
+          
+%           di.plot('raster'); hold on;
+          figure(1);
+          obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
           pause();
         end
         istart = iend+1;
