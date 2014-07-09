@@ -85,6 +85,12 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
       fprintf('Done!\n');
     end
     
+%     N_channels = length(spikes);
+%     dn = zeros(N_channels,length(t));
+%     for n = 1:N_channels      
+%       dn(n,:) = hist(spikes{n},t);
+%     end
+    
     % save point process object
 %     data = pp_data(dn,t);
     data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
