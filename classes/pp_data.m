@@ -61,9 +61,9 @@ classdef pp_data
       if ~isempty(obj.labels), labels = {obj.labels{ind}}; else labels = {}; end
       obj2 = pp_data(dn,obj.t,'name',obj.name,'labels',labels);
       if ~isempty(obj.marks)
-        obj2.marks = {obj.marks{ind}}; % for cell
+        obj2.marks = reshape({obj.marks{:,ind}},[],obj2.N_channels); % for cell
 %         obj2.marks = obj.marks(ind,:); % for matrix
-      end          
+      end
     end
     
     function obj = sub_time(obj,varargin)
