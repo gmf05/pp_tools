@@ -215,7 +215,7 @@ classdef pp_data
             ind = find(obj.dn(i,:));
             for k = 1:length(ind)
               mk = obj.marks{i}(k);
-              mkind = ceil((mk - min_mark)/(max_mark-min_mark)*Nsteps);
+              mkind = round((mk - min_mark)/(max_mark-min_mark)*(Nsteps-1))+1;
               col = colors(mkind,:);
               plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'color', col); hold on;
             end
