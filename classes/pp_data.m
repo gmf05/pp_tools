@@ -13,7 +13,7 @@ classdef pp_data
 % ----------------------------
 % 'name'      :   data set title 
 % 'labels'    :   identifier for each process
-% 'marks'     :   continuous data associated with each process
+% 'marks'     :   continuous data associated with eacjeth process
 % 
 
   properties
@@ -212,7 +212,9 @@ classdef pp_data
 %           cstart = [1 0 0]; % red
 %           cend = [0 0 1]; % blue
 %           colors = interpolateColor(cstart, cend, Nsteps);
-          colors = colormap(jet);
+%           colors = colormap(jet);
+          colors = colormap(hsv);
+          
           for i = 1:obj.N_channels
             ind = find(obj.dn(i,:));
             marks_norm = normalize(obj.marks{i}(j,:));
