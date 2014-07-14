@@ -54,7 +54,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
         save(filtered_filename,'-v7.3','d','t','labels');
         fprintf('Done!\n');
       end
-
+      
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
       N_channels = size(d,1);
@@ -63,7 +63,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
       spikes = cell(1,N_channels);
       marks = cell(1,N_channels);
       if ~exist('Fs','var'), Fs = round(1/(t(2)-t(1))); end
-      dW = round(.05*Fs); % how much shift to allow (# bins + or -)
+      dW = round(.005*Fs); % how much shift to allow (# bins + or -)
       
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
@@ -85,7 +85,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
         % save results
         dn(n,spkind) = 1;
         spikes{n} = t(spkind);
-        d1 = diff(d(n,:)); d2 = diff(d1);        
+        d1 = diff(d(n,:)); d2 = zscore(diff(d1));
         marks{n} = [d(n,spkind); d1(spkind-1); d2(spkind-2)];
       end
 
@@ -122,7 +122,6 @@ function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
     save(pp_filename, '-v7.3','data');
     fprintf('Done!\n\n');
   end
-end
 
 function d_post = preprocessing(d_pre, data_type)
 

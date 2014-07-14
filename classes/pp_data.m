@@ -34,7 +34,7 @@ classdef pp_data
       obj.dn = dn;
       obj.N_channels = size(dn,1);
       obj.T = size(dn,2);
-      if nargin<2, obj.t = 1:T;
+      if nargin<2, obj.t = 1:obj.T;
       else obj.t = t; end
       obj.dt = obj.t(2) - obj.t(1);
       
@@ -86,6 +86,22 @@ classdef pp_data
       obj.t = obj.t(ind);
       obj.T = length(obj.t);
       
+    end
+    
+    function obj = sub_time_fast(obj,varargin)
+      % doesn't keep marks
+      obj.marks = {};
+      if length(varargin)==1
+        ind = varargin{1};
+      else
+        beg_ind = getclosest(obj.t,varargin{1});
+        end_ind = getclosest(obj.t,varargin{2});
+        ind = beg_ind:end_ind;
+      end
+      
+      obj.dn = obj.dn(:,ind);
+      obj.t = obj.t(ind);
+      obj.T = length(obj.t);
     end
 
     function [t,T,dt,tmin,tmax] = get_time(obj)
@@ -205,7 +221,7 @@ classdef pp_data
           title([ttl ' raster plot']);
           
         case 'raster-marks'
-          j=2; % row of mark process
+          j=3; % row of mark process
 %           min_mark = min(min([obj.marks{:}]));
 %           max_mark = max(max([obj.marks{:}]));
           Nsteps = 64;
@@ -406,58 +422,68 @@ classdef pp_data
       end
     end
     
-    function dcat = spike_trigger_plot2(obj,thresh,lockout)
+    function obj0 = spike_trigger_plot2(obj)
       % 
-      psth = sum(obj.dn);
+      
+      global PLOT_COLOR
+      thresh = 65;
+      lockout = round(.05/obj.dt);
+      
+      obj0 = obj;
+      dn = 0*obj.dn;
+      count = 1;
+      for n = 1:obj.N_channels
+        spkind = find(obj.dn(n,:));
+        mks = normalize(obj.marks{n}(1,:)); ind = find(mks<0.4);
+%         mks = obj.marks{n}(3,:); ind = find(mks>1);
+        dn(n,spkind(ind)) = 1;
+      end
+      
+      psth = sum(dn);
       spkInd = find(psth);
       N_spks = sum(psth);
       spkInfo = zeros(N_spks,2);
       count=0;
       for n = spkInd
-        temp = find(obj.dn(:,n));        
+        temp = find(obj0.dn(:,n));        
         N = length(temp);
         spkInfo(count+(1:N),1) = n;
         spkInfo(count+(1:N),2) = temp;
         count = count+N;
       end
       
-% %       % against-all-spikes
-      figure(1);
-      global PLOT_COLOR
-      PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
-
-      % shifting trigger start and end by dL, dR 
-      dL = 0.2; dR = 0.2; % [sec]
-      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+      PLOT_COLOR = 'b'; obj.plot('raster'); hold on; pause;
       
-      makeFlag = true;
+      % shifting trigger start and end by dL, dR 
+      dL = 0; dR = 0.3; % [sec]
+      dLbins = round(dL/obj0.dt); dRbins = round(dR/obj0.dt);
       
       istart=1;
       while istart < N_spks
         tstart = spkInfo(istart,1);
-        iend=istart+1;
-        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
-          iend=iend+1;
-        end        
-        iend = iend-1;
-        tend = spkInfo(iend,1);
-        Nchan = length(unique(spkInfo(istart:iend,2)));
-        if Nchan>=thresh
-%           figure(2);
-          di = obj.sub_time(tstart-dLbins:tend+dRbins).reset_time();
-          if makeFlag
-            dcat = di;
-            makeFlag = false;
-          else
-            dcat = dcat.concat(di);
-          end
-          
-%           di.plot('raster'); hold on;
-          figure(1);
-          obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
-          pause();
-        end
-        istart = iend+1;
+% % % %         iend=istart+1;
+% % % %         while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
+% % % %           iend=iend+1;
+% % % %         end
+% % % %         iend = iend-1;
+% % % %         tend = spkInfo(iend,1);
+% % % %         Nchan = length(unique(spkInfo(istart:iend,2)));
+% % % %         if Nchan>=thresh
+% % % % %           figure(1);
+% % % % %           plot(obj.t(tstart-dLbins:tend+dRbins),d0(tstart-dLbins:tend+dRbins)); hold off; pause;
+% % % %           
+% % % % %           figure(2);
+% % % % %           PLOT_COLOR = 'k'; obj.sub_time_fast(tstart-dLbins:tstart-1).plot('raster');
+% % % % %           PLOT_COLOR = 'k'; obj.sub_time_fast(tend+1:tend+dRbins).plot('raster');
+% % % %           PLOT_COLOR = 'r'; obj.sub_time_fast(tstart:tend).plot('raster'); pause;
+% % % %           
+% % % % %           obj.sub_time_fast(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
+% % % % %           pause();
+% % % %         end
+% % % %         istart = iend+1;
+
+        % istart, iend, tstart, tend
+%         PLOT_COLOR = 'r'; obj.sub_time_fast(tstart:tend).plot('raster'); pause;
       end
     end
     
@@ -504,5 +530,69 @@ classdef pp_data
       obj0 = obj.sub_data(ord);
     end
     
+    
+    function obj0 = sort_mean_time2(obj)
+      global PLOT_COLOR
+      thresh = 65;
+      lockout = round(.025/obj.dt);
+      
+      dn = 0*obj.dn;
+      count = 1;
+      for n = 1:obj.N_channels
+        spkind = find(obj.dn(n,:));
+        mks = normalize(obj.marks{n}(1,:)); ind = find(mks<0.4);
+        dn(n,spkind(ind)) = 1;
+      end
+      
+      psth = sum(dn);
+      spkInd = find(psth);
+      N_spks = sum(psth);
+      spkInfo = zeros(N_spks,2);
+      count=0;
+      for n = spkInd
+        temp = find(dn(:,n));        
+        N = length(temp);
+        spkInfo(count+(1:N),1) = n;
+        spkInfo(count+(1:N),2) = temp;
+        count = count+N;
+      end
+      
+      istart=1;
+      while istart < N_spks
+        tstart = spkInfo(istart,1);
+        iend=istart+1;
+        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
+          iend=iend+1;
+        end
+        iend = iend-1;
+        tend = spkInfo(iend,1);
+        Nchan = length(unique(spkInfo(istart:iend,2)));
+        if Nchan>=thresh
+          if ~exist('objcat','var')
+            objcat = obj.sub_time_fast(tstart:tend).reset_time();
+          else
+            objcat = objcat.concat(obj.sub_time_fast(tstart:tend).reset_time());
+          end
+          % add spike(s) to list
+        end
+        istart = iend+1;
+      end
+
+      % compute mean spike time per channel, ord
+%       mntimes = mntimes(:,1) ./ mntimes(:,2);
+%       [~,ord] = sort(mntimes);
+%       obj0 = obj.sub_data(ord);
+      
+      srt = zeros(1,obj.N_channels);
+      for cspk = 1:obj.N_channels
+        tms = objcat.t(find(objcat.dn(cspk,:)));
+        tms = tms(tms<=0.025);
+        srt(cspk) = mean(tms);
+      end
+      [~,ord] = sort(srt);
+      obj0 = obj.sub_data(ord);
+
+
+    end
   end
 end

@@ -1,9 +1,9 @@
-function [spikeInd] = derivspike(D,d2thresh)
+function [spikeInd,dD,d2D] = derivspike(D,d2thresh)
 % function [spikeInd,amp,derivs,secondDerivs] = derivspike(D,d2thresh)
 
 % get 1st & 2nd derivatives
 dD = diff(D); %dD = dD./max(dD);
-d2D = diff(dD); d2D = d2D./max(d2D);
+d2D = zscore(diff(dD));
 
 % find - to + zero crossings of first deriv = local minima
 minInd = find(dD(1:end-1)<0 & dD(2:end)>=0);

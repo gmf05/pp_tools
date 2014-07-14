@@ -51,8 +51,21 @@
     
   methods
     % Constructor
-    function obj = pp_model(); end
-      
+    function obj = pp_model(b,W,X,y,C)
+      obj.rs = 'exp';
+      if nargin>0
+        obj.b = b;
+        obj.W = W;
+        obj.X = X;
+        if nargin>3
+          obj.y = y;
+          if nargin<5, C = exp(obj.X*obj.b); end
+          obj.CIF = C;
+          obj = obj.calcGOF();
+        end
+      end
+    end
+        
     function obj = fit(obj, d, p)
     % pp_model.fit(d, p)
     % INPUTS:
