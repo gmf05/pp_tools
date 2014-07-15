@@ -268,19 +268,24 @@
       end
       fprintf(['Done!\n']);
 
-      obj = obj.calcGOF();% goodness-of-fit
+      obj = obj.calcGOF(); % goodness-of-fit
     end
     
     function obj = calcGOF(obj, p)      
-      obj.LL = sum(log(poisspdf(obj.y,obj.CIF)));
-      obj.dev = 2*(sum(log(poisspdf(obj.y,obj.y))) - obj.LL);
+      switch obj.link
+        case 'log'
+          obj.LL = sum(log(poisspdf(obj.y,obj.CIF)));
+          obj.dev = 2*(sum(log(poisspdf(obj.y,obj.y))) - obj.LL);
+        case 'logit'
+          obj.LL = sum(log(binopdf(obj.y,ones(size(obj.y)),obj.CIF)));
+          obj.dev = 2*(sum(log(binopdf(obj.y,ones(size(obj.y)),obj.y))) - obj.LL);
+      end
       obj.AIC = obj.dev+2*size(obj.b,1);
 
-      % time rescaling & KS test
-      spike_ind = find(obj.y);           
+      % time rescaling & KS test (NOTE: Should only be for poisson
+      % regression)
+      spike_ind = find(obj.y);         
       numISIs = length(spike_ind)-1;
-
-%       try
         
         if numISIs<3, error('Too few data points for goodness-of-fit'); end
         
@@ -326,11 +331,7 @@
 % % %       ks_p  =  2 * sum((-1).^(j-1).*exp(-2*lambda*lambda*j.^2));
 % % %       ks_p  =  min(max(ks_p, 0), 1);
       ks_p = NaN;
-      
       obj.KS = [ks_stat,ks_ci,ks_p];
-      
-      
-      
       
     end
     
@@ -708,7 +709,7 @@
         dt = t(2) - t(1);
       end
       
-      plot(t,obj.CIF/dt,'color', PLOT_COLOR);
+      plot(t,obj.CIF/dt,'color', PLOT_COLOR); hold on;
       title('$\lambda_t$','interpreter','latex');
       xlabel('time [s]');
       ylabel('[Hz]');

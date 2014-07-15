@@ -44,7 +44,7 @@ classdef pp_data
       for n = 1:2:length(varargin)
         switch varargin{n}
           case 'name', obj.name = varargin{n+1};
-          case 'labels', obj.labels = varargin{n+1};
+          case 'labels', obj.labels = str2cell(varargin{n+1});
           case 'marks',obj.marks = varargin{n+1};
         end
       end            
@@ -55,7 +55,7 @@ classdef pp_data
     end
     
     % Returns a data object with the specified channels
-    function obj2 = sub_data(obj,ind)      
+    function obj2 = sub_data(obj,ind)
       % check list ind to make sure entries are valid??
       dn = obj.dn(ind,:);
       if ~isempty(obj.labels), labels = {obj.labels{ind}}; else labels = {}; end
@@ -376,114 +376,47 @@ classdef pp_data
         count = count+N;
       end
     end
-      
-    function spike_trigger_plot(obj,thresh,lockout)
-      % 
-      psth = sum(obj.dn);
-      spkInd = find(psth);
-      N_spks = sum(psth);
-      spkInfo = zeros(N_spks,2);
-      count=0;
-      for n = spkInd
-        temp = find(obj.dn(:,n));        
-        N = length(temp);
-        spkInfo(count+(1:N),1) = n;
-        spkInfo(count+(1:N),2) = temp;
-        count = count+N;
-      end
-      
-% %       % against-all-spikes
-%       figure(1);
-%       global PLOT_COLOR
-%       PLOT_COLOR = 'b'; obj.plot('raster'); PLOT_COLOR = 'r'; pause;
-
-      % shifting trigger start and end by dL, dR 
-      dL = 0.2; dR = 0.2; % [sec]
+    
+    function intvls = spike_trigger(obj,thresh,lockout)
+      % set parameters
+      dL = 0.15; dR = 0.3; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
-      
-      istart=1;
-      while istart < N_spks
-        tstart = spkInfo(istart,1);
-        iend=istart+1;
-        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
-          iend=iend+1;
-        end        
-        iend = iend-1;
-        tend = spkInfo(iend,1);
-        Nchan = length(unique(spkInfo(istart:iend,2)));
-        if Nchan>=thresh
-%           figure(2);
-          obj.sub_time(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
-%           figure(1);
-%           obj.sub_time(tstart:tend).plot('raster'); hold on; % against-all-spikes
-          pause();
+
+      % get array of spike indices, channels
+      spkInfo = obj.raster_ind();
+
+      % iterate over spikes, finding windows where enough
+      % channels spike
+      intvls = [];
+      spk1=1;
+      while spk1 < N_spks
+        istart = spkInfo(spk1,1);
+        % find last spike before lockout period & channel repeat
+        spk2 = spk1+1;
+        Nchans = length(unique(spkInfo(spk1:spk2,2)));
+        while spkInfo(spk2,1)-istart<=lockout && spk2 < N_spks && Nchans==spk2-spk1+1
+          spk2 = spk2+1;
+          chans = spkInfo(spk1:spk2,2);
+          uchans = unique(chans);    
+          Nchans = length(uchans);
         end
-        istart = iend+1;
+        spk2 = spk2-1;
+
+        if Nchans>=thresh
+          iend = spkInfo(spk2,1);
+          intvls = [intvls; istart-dLbins iend+dRbins];
+        end
+
+        spk1 = spk2+1;
       end
     end
     
-    function obj0 = spike_trigger_plot2(obj)
-      % 
-      
-      global PLOT_COLOR
-      thresh = 65;
-      lockout = round(.05/obj.dt);
-      
-      obj0 = obj;
-      dn = 0*obj.dn;
-      count = 1;
-      for n = 1:obj.N_channels
-        spkind = find(obj.dn(n,:));
-        mks = normalize(obj.marks{n}(1,:)); ind = find(mks<0.4);
-%         mks = obj.marks{n}(3,:); ind = find(mks>1);
-        dn(n,spkind(ind)) = 1;
-      end
-      
-      psth = sum(dn);
-      spkInd = find(psth);
-      N_spks = sum(psth);
-      spkInfo = zeros(N_spks,2);
-      count=0;
-      for n = spkInd
-        temp = find(obj0.dn(:,n));        
-        N = length(temp);
-        spkInfo(count+(1:N),1) = n;
-        spkInfo(count+(1:N),2) = temp;
-        count = count+N;
-      end
-      
-      PLOT_COLOR = 'b'; obj.plot('raster'); hold on; pause;
-      
-      % shifting trigger start and end by dL, dR 
-      dL = 0; dR = 0.3; % [sec]
-      dLbins = round(dL/obj0.dt); dRbins = round(dR/obj0.dt);
-      
-      istart=1;
-      while istart < N_spks
-        tstart = spkInfo(istart,1);
-% % % %         iend=istart+1;
-% % % %         while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
-% % % %           iend=iend+1;
-% % % %         end
-% % % %         iend = iend-1;
-% % % %         tend = spkInfo(iend,1);
-% % % %         Nchan = length(unique(spkInfo(istart:iend,2)));
-% % % %         if Nchan>=thresh
-% % % % %           figure(1);
-% % % % %           plot(obj.t(tstart-dLbins:tend+dRbins),d0(tstart-dLbins:tend+dRbins)); hold off; pause;
-% % % %           
-% % % % %           figure(2);
-% % % % %           PLOT_COLOR = 'k'; obj.sub_time_fast(tstart-dLbins:tstart-1).plot('raster');
-% % % % %           PLOT_COLOR = 'k'; obj.sub_time_fast(tend+1:tend+dRbins).plot('raster');
-% % % %           PLOT_COLOR = 'r'; obj.sub_time_fast(tstart:tend).plot('raster'); pause;
-% % % %           
-% % % % %           obj.sub_time_fast(tstart-dLbins:tend+dRbins).reset_time().plot('raster'); hold on;
-% % % % %           pause();
-% % % %         end
-% % % %         istart = iend+1;
-
-        % istart, iend, tstart, tend
-%         PLOT_COLOR = 'r'; obj.sub_time_fast(tstart:tend).plot('raster'); pause;
+    function spike_trigger_plot2(obj,invtls)
+%       intvls = obj.spike_trigger(thresh,lockout);
+      for i = 1:size(intvls,1)
+        obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
+        hold on;
+        pause;
       end
     end
     
