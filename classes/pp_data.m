@@ -422,37 +422,10 @@ classdef pp_data
     
     function obj0 = sort_mean_time(obj,thresh,lockout)
       % 
-      psth = sum(obj.dn);
-      spkInd = find(psth);
-      N_spks = sum(psth);
-      spkInfo = zeros(N_spks,2);
-      count=0;
-      for n = spkInd
-        temp = find(obj.dn(:,n));        
-        N = length(temp);
-        spkInfo(count+(1:N),1) = n;
-        spkInfo(count+(1:N),2) = temp;
-        count = count+N;
-      end
-       
-      istart=1;
-      while istart < N_spks
-        tstart = spkInfo(istart,1);
-        iend=istart+1;
-        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
-          iend=iend+1;
-        end
-        iend = iend-1;
-        tend = spkInfo(iend,1);
-        Nchan = length(unique(spkInfo(istart:iend,2)));
-        if Nchan>=thresh
-          if ~exist('objcat','var')
-            objcat = obj.sub_time(tstart:tend).reset_time();
-          else
-            objcat = objcat.concat(obj.sub_time(tstart:tend).reset_time());
-          end
-        end
-        istart = iend+1;
+      intvls = obj.spike_trigger(thresh,lockout);
+      objcat = obj.sub_time_fast(intvls(1,1):intvls(1,2)).reset_time();
+      for i = 2:size(intvls,1)
+        objcat = objcat.concat(obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time());
       end
       
       srt = zeros(1,obj.N_channels);
@@ -463,69 +436,5 @@ classdef pp_data
       obj0 = obj.sub_data(ord);
     end
     
-    
-    function obj0 = sort_mean_time2(obj)
-      global PLOT_COLOR
-      thresh = 65;
-      lockout = round(.025/obj.dt);
-      
-      dn = 0*obj.dn;
-      count = 1;
-      for n = 1:obj.N_channels
-        spkind = find(obj.dn(n,:));
-        mks = normalize(obj.marks{n}(1,:)); ind = find(mks<0.4);
-        dn(n,spkind(ind)) = 1;
-      end
-      
-      psth = sum(dn);
-      spkInd = find(psth);
-      N_spks = sum(psth);
-      spkInfo = zeros(N_spks,2);
-      count=0;
-      for n = spkInd
-        temp = find(dn(:,n));        
-        N = length(temp);
-        spkInfo(count+(1:N),1) = n;
-        spkInfo(count+(1:N),2) = temp;
-        count = count+N;
-      end
-      
-      istart=1;
-      while istart < N_spks
-        tstart = spkInfo(istart,1);
-        iend=istart+1;
-        while spkInfo(iend,1)-tstart<=lockout && iend < N_spks
-          iend=iend+1;
-        end
-        iend = iend-1;
-        tend = spkInfo(iend,1);
-        Nchan = length(unique(spkInfo(istart:iend,2)));
-        if Nchan>=thresh
-          if ~exist('objcat','var')
-            objcat = obj.sub_time_fast(tstart:tend).reset_time();
-          else
-            objcat = objcat.concat(obj.sub_time_fast(tstart:tend).reset_time());
-          end
-          % add spike(s) to list
-        end
-        istart = iend+1;
-      end
-
-      % compute mean spike time per channel, ord
-%       mntimes = mntimes(:,1) ./ mntimes(:,2);
-%       [~,ord] = sort(mntimes);
-%       obj0 = obj.sub_data(ord);
-      
-      srt = zeros(1,obj.N_channels);
-      for cspk = 1:obj.N_channels
-        tms = objcat.t(find(objcat.dn(cspk,:)));
-        tms = tms(tms<=0.025);
-        srt(cspk) = mean(tms);
-      end
-      [~,ord] = sort(srt);
-      obj0 = obj.sub_data(ord);
-
-
-    end
   end
 end
