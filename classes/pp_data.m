@@ -411,8 +411,8 @@ classdef pp_data
       end
     end
     
-    function spike_trigger_plot(obj,invtls)
-%       intvls = obj.spike_trigger(thresh,lockout);
+    function spike_trigger_plot(obj,thresh,lockout)
+      intvls = obj.spike_trigger(thresh,lockout);
       for i = 1:size(intvls,1)
         obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
         hold on;
