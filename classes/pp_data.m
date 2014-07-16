@@ -44,7 +44,7 @@ classdef pp_data
       for n = 1:2:length(varargin)
         switch varargin{n}
           case 'name', obj.name = varargin{n+1};
-          case 'labels', obj.labels = str2cell(varargin{n+1});
+          case 'labels', obj.labels = varargin{n+1};
           case 'marks',obj.marks = varargin{n+1};
         end
       end            
@@ -380,21 +380,23 @@ classdef pp_data
     function intvls = spike_trigger(obj,thresh,lockout)
       % set parameters
       dL = 0.15; dR = 0.3; % [sec]
+      dL = 0; dR = 0; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
 
       % get array of spike indices, channels
       spkInfo = obj.raster_ind();
+      Nspks = size(spkInfo,1);
 
       % iterate over spikes, finding windows where enough
       % channels spike
       intvls = [];
       spk1=1;
-      while spk1 < N_spks
+      while spk1 < Nspks
         istart = spkInfo(spk1,1);
         % find last spike before lockout period & channel repeat
         spk2 = spk1+1;
         Nchans = length(unique(spkInfo(spk1:spk2,2)));
-        while spkInfo(spk2,1)-istart<=lockout && spk2 < N_spks && Nchans==spk2-spk1+1
+        while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
           spk2 = spk2+1;
           chans = spkInfo(spk1:spk2,2);
           uchans = unique(chans);    
@@ -411,8 +413,8 @@ classdef pp_data
       end
     end
     
-    function spike_trigger_plot(obj,thresh,lockout)
-      intvls = obj.spike_trigger(thresh,lockout);
+    function spike_trigger_plot(obj,intvls)
+%       intvls = obj.spike_trigger(thresh,lockout);
       for i = 1:size(intvls,1)
         obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
         hold on;
@@ -420,9 +422,9 @@ classdef pp_data
       end
     end
     
-    function obj0 = sort_mean_time(obj,thresh,lockout)
-      % 
-      intvls = obj.spike_trigger(thresh,lockout);
+    function obj0 = sort_mean_time(obj,intvls)
+%       intvls = obj.spike_trigger(thresh,lockout);
+%       intvls(end,:)=[]; % weird bug, last interval is no good??
       objcat = obj.sub_time_fast(intvls(1,1):intvls(1,2)).reset_time();
       for i = 2:size(intvls,1)
         objcat = objcat.concat(obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time());
