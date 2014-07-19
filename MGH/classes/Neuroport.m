@@ -5,7 +5,6 @@ classdef Neuroport
     coord
     arrayMap
     Ws
-    caxis
   end
   
   methods
@@ -69,7 +68,7 @@ classdef Neuroport
       end      
     end
       
-    function plot(obj,Ws,cax)    
+    function plot(obj,Ws,cax,taxis,dn)
 
     if nargin<2
       if isempty(obj.Ws)
@@ -79,20 +78,26 @@ classdef Neuroport
       end
     end
             
-    if nargin<3 && isempty(obj.caxis)
+    if nargin<3 || isempty(cax)
       cax = [min(min(Ws)) max(max(Ws))];
-    elseif nargin<3
-      cax = obj.caxis;
-    end    
+    end
+    
+    if nargin<4, taxis = 1:size(Ws,2); end
+    
+    spikeFlag = (nargin>=5);    
 
     C = cax(2)-cax(1);    
     R = 0.5;
+    R2 = 0.2;
+    theta = 0:0.2:2*pi;
     if size(Ws,2)==obj.N_electrodes && size(Ws,1)~=obj.N_electrodes, Ws = Ws'; end
     T = size(Ws,2);
 
     % plotting---
-    clf, set(gcf,'units','normalized','position',[0 0 1 1]);
-    color_RGB = colormap();
+%     clf, set(gcf,'units','normalized','position',[0 0 1 1]);
+    cla;
+    title('Neuroport array');
+    color_RGB = colormap();    
 %     my_img = phaseintensity(Ws);
     
     for t = 1:T
@@ -111,16 +116,20 @@ classdef Neuroport
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
         text(x,y,num2str(n),'fontsize',22);
       end
+      
+      if spikeFlag && any(dn(:,t))
+        for n = find(dn(:,t))'
+          fill(obj.coord(n,1)+R2*cos(theta),obj.coord(n,2)+R2*sin(theta),'w');
+        end
+      end
+      
       axis xy;
       set(gca,'XTick',[]);
       set(gca,'YTick',[]);
-      
-      if T>1
-        title(num2str(t));
-%         pause(0.002);
-        pause(0.02);
-        hold off; clf;
-      end
+            
+      xlabel(['time = ' num2str(taxis(t))]);
+      pause(0.02);
+      if t<T, hold off; cla; end
     end
   end
   
@@ -142,7 +151,6 @@ classdef Neuroport
         plot(obj.coord(n,1) + [-cumDir(1) 0], obj.coord(n,2) + [-cumDir(2) 0], 'b');
         if doCI
           cumDirW = WT * Ws{response} * WT';
-          
         end
       end
     end

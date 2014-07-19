@@ -89,7 +89,10 @@ classdef pp_data
     end
     
     function obj = sub_time_fast(obj,varargin)
-      % doesn't keep marks
+      % keeps all marks rather than distinguishing
+      % which are related to the new time window
+      % this approach is meant for quick and dirty
+      % applications
       obj.marks = {};
       if length(varargin)==1
         ind = varargin{1};
@@ -258,15 +261,19 @@ classdef pp_data
       fprintf(['Downsampling point process data by a factor of ' num2str(dT) '...']);
       t_old = obj.t;
       dn_old = obj.dn;
-      
       obj.t = obj.t(1:dT:end);
       obj.dt = obj.dt*dT;
       obj.T = length(obj.t);      
-      obj.dn = zeros(obj.N_channels,obj.T);
       
+      % method 1
+      obj.dn = zeros(obj.N_channels,obj.T);      
       for i = 1:obj.N_channels
         obj.dn(i,:) = hist(t_old(dn_old(i,:)>0), obj.t);
       end
+           
+      % method 2
+      obj.dn = cumdownsample(obj.dn,dT);
+      
       fprintf('Done!\n');
       
       if any(obj.dn(:)>1)
