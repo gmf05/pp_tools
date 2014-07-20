@@ -51,7 +51,7 @@
     
   methods
     % Constructor
-    function obj = pp_model(b,W,X,y,C)
+    function obj = pp_model(b,W,X,y,C,link)      
       obj.rs = 'exp';
       if nargin>0
         obj.b = b;
@@ -59,8 +59,8 @@
         obj.X = X;
         if nargin>3
           obj.y = y;
-          if nargin<5, C = exp(obj.X*obj.b); end
           obj.CIF = C;
+          obj.link = link;
           obj = obj.calcGOF();
         end
       end
@@ -540,8 +540,8 @@
       
       switch p.covariate_bases{1}
         case 'spline'
-          if DO_CONF_INT              
-            [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,obj.W,Z);
+          if DO_CONF_INT
+            [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,W1,Z);
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
