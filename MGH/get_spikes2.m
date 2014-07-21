@@ -68,7 +68,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thres
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-        spkind = derivspike(d(n,:),thresh);
+        spkind = derivspike(d(n,:),d1thresh,d2thresh);
         % post-process spkind to correspond to MINIMA over certain window
         % a spike s gets placed on the interval [s-dW, s+dW]          
         for i = 1:length(spkind)
