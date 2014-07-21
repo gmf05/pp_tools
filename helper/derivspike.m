@@ -10,7 +10,7 @@ minInd = find(dD(1:end-1)<0 & dD(2:end)>=0);
 
 % keep places where 2nd deriv is > d2thresh
 spikeInd = [];
-for i = 1:length(minInd)
+for i = 2:length(minInd)-1
   if min(dD(minInd(i-1):minInd(i)))<-d1thresh && max(dD(minInd(i):minInd(i+1)))>d1thresh && ...
       d2D(minInd(i))>d2thresh
     spikeInd(end+1) = minInd(i);

@@ -2,124 +2,16 @@
 patient_name = 'MG49';
 seizure_name = 'Seizure45';
 data_type = 'LFP';
-thresh = 1;
+d1thresh = 0.5; d2thresh = 1;
 N = Neuroport(patient_name);
 
-% data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
-% load([data_name '_filtered']); d_post = d'; time = t;
-load wave_data_S45_test
-
-%% get spikes from filtered data
-
-% tmin = 115; tmax = 125;
-% tmin = 120; tmax = 122;
-% tmin = 120; tmax = 125;
-% tmin = 115; tmax = 130;
-tmin = 100; tmax = 125;
-% tmin = 80; tmax = 90;
-min_refract = 0.3*3e4;
-trange = getclosest(time,tmin):getclosest(time,tmax);
-time_W = time(trange);
-Ws = d_post(trange,:)';
-T = size(Ws,2);
-labels = str2cell(num2str((1:96)'));
-
-big_dn = zeros(N.N_electrodes,T);
-small_dn = zeros(N.N_electrodes,T);
-
-for n = 1:N.N_electrodes
-% for n = [1 10 20]
-  % get all spikes
-  [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
-  % separate into two classes: big and small
-  [sortAmp,sortI] = sort(amp);
-  dropI = [];
-  for j = 2:length(amp)
-    if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
-      dropI = [dropI sortI(j)];
-    end
-  end
-  small_ind = ind(dropI);
-  big_ind = ind;
-  big_ind(dropI) = [];
-
-%   % plot
-%   plot(time_W,Ws(n,:)); hold on
-%   plot(time_W(big_ind),Ws(n,big_ind),'rx');
-%   plot(time_W(small_ind),Ws(n,small_ind),'ks');
-%   pause(); clf;
-  
-  big_dn(n,big_ind) = 1;
-  small_dn(n,small_ind) = 1;
-
-end
-
-d_big = pp_data(big_dn, time_W, 'name', 'MG49-S45-LFP-big', 'labels', labels);
-d_small = pp_data(small_dn, time_W, 'name', 'MG49-S45-LFP-small', 'labels', labels);
-d_both = pp_data([small_dn; big_dn], time_W, 'name', 'MG49-S45-LFP-both', 'labels', labels);
-d_all = pp_data(small_dn + big_dn, time_W, 'name', 'MG49-S45-LFP', 'labels', labels);
-% save -v7.3 wave_data_S45_test  d_big d_small d_both d_all
-
-%% concatenate intervals of interest
-
-d = d_big;
-
-spks = [];
-for n = 1:d.N_channels
-  spks = [spks d.t(find(d.dn(n,:)))];
-end
-
-[counts, times] = hist(spks,d.t(1):0.02:d.t(end));
-ind = find(counts>50);
-for n = 1:length(ind)
-  tOn = times(ind(n)-1);
-  tOff = times(ind(n)+1);
-  if n==1
-    d0 = d.sub_time(tOn,tOff);
-  else
-    d0 = d0.concat(d.sub_time(tOn,tOff));
-  end
-end
-
-d0 = d0.reset_time();
-d = d0;
-
-tOn = 0;  tOff = 0.04;
-D0 = d0.sub_time(tOn,tOff).dn;
-ind = find(sum(D0)); % what times do spikes occur?
-chan = zeros(1,96);
-count = 0;
-for n = 1:length(ind)
-  M = length(find(D0(:,ind(n))));
-  chan(count+(1:M)) = find(D0(:,ind(n))); % which channels spike?
-  count = count+M;
-end
-chan(count+1:end) = [];
-
-d = d_big;
-d0 = d.sub_data(chan);
-
-
-%% remove channels with outlying number of spikes
-
-% d = d_small;
-d = d_big;
-counts = sum(d.dn,2);
-[goodCounts,goodChan] = removeoutliers(counts);
-d = d.sub_data(goodChan);
+d = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh);
+d.labels = str2cell(d.labels);
+% d = d.remove_outlier_counts();
 
 %% 
 
-%small spike models
-% 1- what do intrinsic effects give us? good fit, peak ~100ms
-% 2- what do add'l spatial effects (small spikes) give us? worse fit, large CI
-% 3- what do add'l spatial effects (big spikes) give us?
-
-file_name = 'wave_model_s45';
-d = d_big;
-[good_counts,good_channels] = removeoutliers(sum(d.dn,2));
-d = d.sub_data(good_channels);
-
+% file_name = 'wave_model_s45';
 m = pp_model();
 
 T_knots = [0 1]; T_basis = 'indicator';
@@ -127,11 +19,11 @@ T_knots = [0 1]; T_basis = 'indicator';
 dt_ms = round(.001 / d.dt);
 Q_knots = [] * dt_ms; Q_basis = '';
 % Q_knots = [1 100:100:500] * dt_ms; Q_basis = 'spline'; 
-% Q_knots = [1 100:200:900] * dt_ms; Q_basis = 'spline'; 
+Q_knots = [1 100:200:900] * dt_ms; Q_basis = 'spline'; 
 % Q_knots = [10 200:200:700] * dt_ms; Q_basis = 'spline'; 
-% R_knots = []; R_basis = '';
+R_knots = []; R_basis = '';
 % R_knots = [0 5:10:45]  * dt_ms; R_basis = 'spline'; 
-R_knots = [0 10:10:40] * dt_ms; R_basis = 'spline'; 
+% R_knots = [0 10:10:40] * dt_ms; R_basis = 'spline'; 
 Q = length(Q_knots); R = length(R_knots);
 
 % get list, count of interior electrodes
@@ -177,33 +69,33 @@ for response = 45
     
     if R>0
       p = p.add_covar('pop-hist1',C_up,R_knots,R_basis);
-%       p = p.add_covar('pop-hist2',C_down,R_knots,R_basis);
-%       p = p.add_covar('pop-hist3',C_left,R_knots,R_basis);
-%       p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
+      p = p.add_covar('pop-hist2',C_down,R_knots,R_basis);
+      p = p.add_covar('pop-hist3',C_left,R_knots,R_basis);
+      p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
     end
 
-    m = m.makeX(d,p); % fprintf('Made design matrix\n');
-    trange = (count-1)*NT + (1:NT);
-    cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
-    count = count+1;
+%     m = m.makeX(d,p); % fprintf('Made design matrix\n');
+%     trange = (count-1)*NT + (1:NT);
+%     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
+%     count = count+1;
 %     X(trange,:) = m.X; % all parameters assumed to be = across grid    
-    varind = [count N_int+(1:N_spatial_cov)];
-    X(trange,varind) = m.X;
-    y(trange) = d.dn(response,:)';
+%     varind = [count N_int+(1:N_spatial_cov)];
+%     X(trange,varind) = m.X;
+%     y(trange) = d.dn(response,:)';
     
-%     m = m.fit(d,p); m, m.plot(d,p); pause; clf;
+    m = m.fit(d,p); m, m.plot(d,p); pause; clf;
 %     m = m.fit(d,p); m, m.gof(d); pause; clf;
     
     ps = p; % save parameters
   end
 end
 
-%%
-[b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-m = pp_model();
-m.X = X; m.y = y; m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
-m.CIF = glmval(b,X,'log','constant','off');
-m = m.calcGOF();
-figure, m.plot(d,p)
-figure, m.gof(d)
-save(file_name '_m1','-v7.3','m');
+% %% network model
+% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
+% m = pp_model();
+% m.X = X; m.y = y; m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
+% m.CIF = glmval(b,X,'log','constant','off');
+% m = m.calcGOF();
+% figure, m.plot(d,p)
+% figure, m.gof(d)
+% save(file_name '_m1','-v7.3','m');

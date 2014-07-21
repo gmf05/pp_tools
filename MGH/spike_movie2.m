@@ -2,6 +2,8 @@
 patient_name = 'MG49';
 seizure_name = 'Seizure45';
 data_type = 'LFP';
+d1thresh = 0.5;
+d2thresh = 1;
 % tmin = 120; tmax = 125;
 % tmin = 100; tmax = 110;
 tmin = 120; tmax = 150;
@@ -29,10 +31,10 @@ mn = min(min(dsz)); mx = max(max(dsz));
 dnorm = -normalize(dsz);
 
 % get point process spike data
-dpp = get_spikes2(patient_name,seizure_name,data_type,0.5);
-dpp = dpp.sub_time(tmin,tmax);
-% dpp = dpp.remove_outlier_counts();
+dpp = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh);
 dpp.labels = str2cell(dpp.labels);
+% dpp = dpp.sub_time(tmin,tmax);
+% dpp = dpp.remove_outlier_counts();
 
 %% get "big" spikes
 dbig = dpp;
@@ -40,9 +42,10 @@ dbig.dn = 0*dbig.dn;
 count = 1;
 for n = 1:dpp.N_channels
   spkind = find(dpp.dn(n,:));
-  mks = normalize(dpp.marks{n}(1,:)); ind = find(mks<0.4); % low amplitude
-%   mks = normalize(dpp.marks{n}(3,:)); ind = find(mks>0.5); % high curvature
+%   mks = normalize(dpp.marks{n}(1,:)); ind = find(mks<0.4); % low amplitude
+%   mks = normalize(dpp.marks{n}(3,:)); ind = find(mks>0.5); % high curvature  
 %   mks = zscore(dpp.marks{n}(3,:)); ind = find(mks>1); % high curvatur
+  mks = dpp.marks{n}(3,:); ind = find(mks>6); % high curvature
   dbig.dn(n,spkind(ind)) = 1;
 end
 
