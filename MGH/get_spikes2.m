@@ -1,9 +1,9 @@
-function data = get_spikes2(patient_name,seizure_name,data_type,thresh)
+function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh)
   
   global DATA;
  
-  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
+  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(d1thresh) '_' num2str(d2thresh)];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str([d1thresh,d2thresh])];
   pp_filename = [DATA '/' patient_name '/' data_name '_dpp.mat'];
   spikes_filename = [DATA '/' patient_name '/' data_name '_dspikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered_lo.mat'];
