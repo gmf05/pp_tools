@@ -129,7 +129,9 @@ switch data_type
 
   %-------------------------- local field potential (LFP)
   case 'LFP'
-  fL = [0  59.5  60  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
+%   fL = [0  59.5  60  fNQ]/fNQ;
+  fL = [0  55  60  fNQ]/fNQ;
+  zL = [1   1   0    0]/fNQ; % Lowpass
   bL = firls(2000,fL,zL);
   d_post = d_pre;
   d_post = filtfilt(bL,1,d_post);
