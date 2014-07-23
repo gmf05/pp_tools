@@ -55,20 +55,23 @@ end
 close all, figure
 ax = cell(1,5);
 % left bototm width height
-ax{1} = axes('position',[0.01 0.9 0.98 0.08]);
-ax{2} = axes('position',[0.01 0.8 0.98 0.08]);
-ax{3} = axes('position',[0.01 0.7 0.98 0.08]);
-ax{4} = axes('position',[0.03 0.05 0.45 0.58]);
-ax{5} = axes('position',[0.51 0.05 0.48 0.58]);
+% ax{1} = axes('position',[0.01 0.9 0.98 0.08]);
+% ax{2} = axes('position',[0.01 0.8 0.98 0.08]);
+% ax{3} = axes('position',[0.01 0.7 0.98 0.08]);
+ax{1} = axes('position',[0.01 0.84 0.98 0.12]);
+ax{2} = axes('position',[0.01 0.7 0.98 0.12]);
+ax{5} = axes('position',[0.03 0.05 0.45 0.58]);
+ax{4} = axes('position',[0.51 0.05 0.48 0.58]);
 
 
 % voltage traces + spikes
-chans = [12 42 80];
+% chans = [12 42 80];
+chans = [12 42];
 Nchans = length(chans);
 for n = 1:Nchans
   c = chans(n);
-  figure(1), subplot(Nchans,1,n);
-%   subplot(ax{n});
+%   figure(1), subplot(Nchans,1,n);
+  subplot(ax{n});
   plot(tsz,dsz(c,:)); hold on;
   spkind = find(dpp.dn(c,:)); bigind = find(dbig.dn(c,:));
   plot(tsz(spkind),dsz(c,spkind),'ro','markersize',10,'linewidth',2.5);
@@ -99,26 +102,27 @@ for i = 1:size(I,1)
   mx = max(max(dsz(:,ti1:ti2)));
   % draw lines on voltage trace plots to show bounds
   for n = 1:Nchans
-%     subplot(ax{n});
-    figure(1), subplot(Nchans,1,n)
+    subplot(ax{n});
+%     figure(1), subplot(Nchans,1,n)
     h1{n} = plot(tsz([ti1 ti1]), 2*[mn mx], 'r', 'linewidth',2);
     h2{n} = plot(tsz([ti2 ti2]), 2*[mn mx], 'r', 'linewidth',2);
     ylim([1.1*mn 1.1*mx]);
-    xlim([tsz(ti1)-0.05 tsz(ti2)+0.05]);
+%     xlim([tsz(ti1)-0.05 tsz(ti2)+0.05]);
+    xlim([120,125])    
   end
   pause;
 
   % draw raster plot on re-sorted units
-  figure(2);
-%   subplot(ax{4});
+%   figure(2);
+  subplot(ax{4});
   cla, dsort.sub_time_fast(ti1:ti2).plot('raster');
   xlim(tsz([ti1 ti2]));
   title('');
   pause;
 
   % play movie of activity across electrode array
-  figure(2);
-%   subplot(ax{5});
+%   figure(2);
+  subplot(ax{5});
   title('voltage actiivty on Neuroport array'), %colorbar;
   dsFactor = 30;
   tind = ti1:dsFactor:ti2;
