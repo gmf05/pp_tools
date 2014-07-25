@@ -49,6 +49,9 @@ for n = 1:dpp.N_channels
   dbig.dn(n,spkind(ind)) = 1;
 end
 
+%%
+
+
 %% plotting
 
 % make axes
