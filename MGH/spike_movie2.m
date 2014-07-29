@@ -7,14 +7,6 @@ d2thresh = 1;
 % tmin = 120; tmax = 125;
 % tmin = 100; tmax = 110;
 tmin = 120; tmax = 150;
-tdelay = 0.05;
-
-doSave = false;
-if doSave
-  VW = VideoWriter([patient_name '_' seizure_nam '_new1.avi']);
-  VW.open();
-end
-
 
 % get electrode array
 N = Neuroport(patient_name);
@@ -32,25 +24,10 @@ dnorm = -normalize(dsz);
 
 % get point process spike data
 dpp = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh);
-dpp.labels = str2cell(dpp.labels);
-% dpp = dpp.sub_time(tmin,tmax);
+dpp = dpp.sub_time(tmin,tmax);
 % dpp = dpp.remove_outlier_counts();
 
-%% get "big" spikes
-dbig = dpp;
-dbig.dn = 0*dbig.dn;
-count = 1;
-for n = 1:dpp.N_channels
-  spkind = find(dpp.dn(n,:));
-%   mks = normalize(dpp.marks{n}(1,:)); ind = find(mks<0.4); % low amplitude
-%   mks = normalize(dpp.marks{n}(3,:)); ind = find(mks>0.5); % high curvature  
-%   mks = zscore(dpp.marks{n}(3,:)); ind = find(mks>1); % high curvatur
-  mks = dpp.marks{n}(3,:); ind = find(mks>6); % high curvature
-  dbig.dn(n,spkind(ind)) = 1;
-end
-
-%%
-
+dbig = get_big_spikes(dpp,0.1); % get "big" spikes
 
 %% plotting
 
@@ -130,15 +107,16 @@ for i = 1:size(I,1)
   dsFactor = 30;
   tind = ti1:dsFactor:ti2;
   dn0 = cumdownsample(dpp.dn(:,ti1:ti2),dsFactor);
-  N.plot(dnorm(:,tind),[],dpp.t(tind),dn0);
-  pause;
-    
-  %   if doSave
-  %     VW.writeVideo(getframe(gcf));
-  %   end
+%   mov = N.plot(dnorm(:,tind),[],dpp.t(tind),dn0);
+%   pause; 
   
   % remove lines denoting interval
   for n = 1:Nchans
     delete(h1{n}); delete(h2{n});
   end
+  
+%   movie2gif(mov, ['wave' num2str(i) '.gif'], 'LoopCount', 0, 'DelayTime', 0)
+  
 end
+
+

@@ -1,5 +1,5 @@
 function [spikeInd,dD,d2D] = derivspike(D,d1thresh,d2thresh)
-% function [spikeInd,amp,derivs,secondDerivs] = derivspike(D,d2thresh)
+% function [spikeInd,amp,derivs,secondDerivs] = derivspike(D,d1thresh,d2thresh)
 
 % get 1st & 2nd derivatives
 dD = zscore(diff(D));

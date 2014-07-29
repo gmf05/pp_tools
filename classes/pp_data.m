@@ -13,7 +13,7 @@ classdef pp_data
 % ----------------------------
 % 'name'      :   data set title 
 % 'labels'    :   identifier for each process
-% 'marks'     :   continuous data associated with eacjeth process
+% 'marks'     :   continuous data associated with each process
 % 
 
   properties

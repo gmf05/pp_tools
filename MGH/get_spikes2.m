@@ -3,7 +3,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thres
   global DATA;
  
   data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(d1thresh) '_' num2str(d2thresh)];
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str([d1thresh,d2thresh])];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(d1thresh) ',' num2str(d2thresh)];
   pp_filename = [DATA '/' patient_name '/' data_name '_dpp.mat'];
   spikes_filename = [DATA '/' patient_name '/' data_name '_dspikes.mat'];
   filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered_lo.mat'];
@@ -11,46 +11,51 @@ function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thres
   if exist(pp_filename,'file')
     fprintf(['Loaded ' data_name0 '\n']);
     load(pp_filename)
-  else    
+  else 
     if exist(spikes_filename, 'file')
       fprintf(['Cannot find point process object for ' data_name0 '\n']);
       fprintf('Loading spike times...');
-      load(spikes_filename)
+      load(spikes_filename);      
       fprintf('Done!\n');
+      
+      N_channels = length(labels);
+      dn = zeros(N_channels,length(t));
+      for n = 1:N_channels
+        dn(n,:) = hist(spikes{n},t);
+      end
+      
     else
       fprintf(['Cannot find spikes for ' data_name0 '\n']);
+      fprintf('Loading raw data...');
+      load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
+      fprintf('Done!\n');
+      
+      switch data_type
+        case 'EEG'
+          szX = sz.EEG;
+          t = sz.ECoG.Time;
+        case 'ECoG'
+          szX = sz.ECoG;
+          t = sz.ECoG.Time;
+        case {'LFP','MUA'}
+          szX = sz.LFP;
+          t = sz.LFP.Time;
+      end
+      dpre = szX.Data'; % want channel x time
+      
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         load(filtered_filename);
         fprintf('Done!\n');
       else
-        fprintf('Cannot find processed data.\n');
-        fprintf('Loading raw data...\n');
-        load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
-        fprintf('Done!\n');
-        
-        switch data_type
-          case 'EEG'
-            szX = sz.EEG;
-            t = sz.ECoG.Time;
-          case 'ECoG'
-            szX = sz.ECoG;
-            t = sz.ECoG.Time;
-          case {'LFP','MUA'}
-            szX = sz.LFP;
-            t = sz.LFP.Time;
-        end
-
-        fprintf('Preprocessing...');
+        fprintf('Cannot find processed data.\n');        
+        fprintf('Filtering...');
         szX.Onset = sz.Onset; szX.Offset = sz.Offset;
         labels = str2cell(szX.Labels);
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
-        d = szX.Data;
-        
-        % printing progress
-        for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end
-        d = d'; % want channel x time
+        d = dpre;
+        for i = 1:size(d,1), i, d(i,:) = preprocessing(dpre(i,:), data_type); end
         save(filtered_filename,'-v7.3','d','t','labels');
         fprintf('Done!\n');
       end
@@ -75,7 +80,7 @@ function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thres
           i0 = spkind(i) - dW;
           istart = max(1, spkind(i)-dW);
           iend = min(spkind(i)+dW, T);
-          [~,shft] = min(d(n,istart:iend));
+          [~,shft] = min(dpre(n,istart:iend));
           spkind(i) = istart + shft - 1;
         end
         spkind = unique(spkind);
@@ -85,21 +90,15 @@ function data = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thres
         % save results
         dn(n,spkind) = 1;
         spikes{n} = t(spkind);
-        d1 = diff(d(n,:)); d2 = zscore(diff(d1));
-        marks{n} = [d(n,spkind); d1(spkind-1); d2(spkind-2)];
+        d1 = zscore(diff(d(n,:))); d2 = zscore(diff(d1));
+        marks{n} = [dpre(n,spkind); d1(spkind-1); d2(spkind-2)];
       end
 
       fprintf('Done!\nSaving spikes...');
       save(spikes_filename,'-v7.3','spikes','marks','labels','t');
       fprintf('Done!\n');
     end
-    
-%     N_channels = length(spikes);
-%     dn = zeros(N_channels,length(t));
-%     for n = 1:N_channels      
-%       dn(n,:) = hist(spikes{n},t);
-%     end
-    
+       
     % save point process object
 %     data = pp_data(dn,t);
     data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);

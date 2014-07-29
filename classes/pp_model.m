@@ -488,7 +488,7 @@
         if norm(b - b_old, inf) < eps, break; end
         
         % stop if singular warning received:
-        
+        % DELETED
         
         eta = offset + X*b;
         mu = ilinkFn(eta);
@@ -650,7 +650,7 @@
             ylabel('lag time [ms]');
 %             title({p.covariate_names{covar_num}; d.Name});
         end
-      end      
+      end
       update_fig(); % change font size, interpreter
     end
 

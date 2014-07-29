@@ -68,7 +68,7 @@ classdef Neuroport
       end      
     end
       
-    function plot(obj,Ws,cax,taxis,dn)
+    function mov = plot(obj,Ws,cax,taxis,dn)
 
     if nargin<2
       if isempty(obj.Ws)
@@ -85,7 +85,8 @@ classdef Neuroport
     if nargin<4, taxis = 1:size(Ws,2); end
     
     spikeFlag = (nargin>=5);    
-
+    
+    mov = [];
     C = cax(2)-cax(1);    
     R = 0.5;
     R2 = 0.2;
@@ -114,21 +115,27 @@ classdef Neuroport
         col = color_RGB(col_ind,:);
 %         col = reshape(my_img(n,:,:),1,[]); % phase intensity
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
-        text(x,y,num2str(n),'fontsize',22);
+%         text(x,y,num2str(n),'fontsize',22);
       end
       
       if spikeFlag && any(dn(:,t))
         for n = find(dn(:,t))'
-          fill(obj.coord(n,1)+R2*cos(theta),obj.coord(n,2)+R2*sin(theta),'w');
+%           fill(obj.coord(n,1)+R2*cos(theta),obj.coord(n,2)+R2*sin(theta),'w');
+%           text(obj.coord(n,1),obj.coord(n,2),'o','fontsize',14,'fontweight','bold','color','r');
+          text(obj.coord(n,1),obj.coord(n,2),'x','fontsize',14,'fontweight','bold');
         end
       end
       
-      axis xy;
-      set(gca,'XTick',[]);
-      set(gca,'YTick',[]);
-            
-      xlabel(['time = ' num2str(taxis(t))]);
-      pause(0.02);
+      axis off, box off      
+      title(['time = ' num2str(taxis(t))]);
+      
+%       axis xy;
+%       set(gca,'XTick',[]);
+%       set(gca,'YTick',[]);      
+%       xlabel(['time = ' num2str(taxis(t))]);
+%       mov(t) = getframe;
+%       pause(0.02);
+      pause();
       if t<T, hold off; cla; end
     end
   end

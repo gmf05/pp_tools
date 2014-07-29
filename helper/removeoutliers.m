@@ -15,7 +15,7 @@ function [dataout,goodIndices] = removeoutliers(datain)
 %   This function was written by Vince Petaccio on July 30, 2009.
 n=length(datain); %Determine the number of samples in datain
 if n < 3
-    display(['ERROR: There must be at least 3 samples in the' ...
+    error(['ERROR: There must be at least 3 samples in the' ...
         ' data set in order to use the removeoutliers function.']);
 else
     S=std(datain); %Calculate S, the sample standard deviation

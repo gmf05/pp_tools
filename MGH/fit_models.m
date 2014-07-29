@@ -6,8 +6,8 @@ d1thresh = 0.5; d2thresh = 1;
 N = Neuroport(patient_name);
 
 d = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh);
-d.labels = str2cell(d.labels);
 % d = d.remove_outlier_counts();
+d = get_big_spikes(d,0.1);
 
 %% 
 
@@ -17,13 +17,10 @@ m = pp_model();
 T_knots = [0 1]; T_basis = 'indicator';
 % T_knots = [0 1]; T_basis = 'spline';
 dt_ms = round(.001 / d.dt);
-Q_knots = [] * dt_ms; Q_basis = '';
-% Q_knots = [1 100:100:500] * dt_ms; Q_basis = 'spline'; 
-Q_knots = [1 100:200:900] * dt_ms; Q_basis = 'spline'; 
-% Q_knots = [10 200:200:700] * dt_ms; Q_basis = 'spline'; 
+% Q_knots = [] * dt_ms; Q_basis = '';
+Q_knots = [1 300:200:900] * dt_ms; Q_basis = 'spline'; 
 R_knots = []; R_basis = '';
-% R_knots = [0 5:10:45]  * dt_ms; R_basis = 'spline'; 
-% R_knots = [0 10:10:40] * dt_ms; R_basis = 'spline'; 
+% R_knots = [0 5 20]  * dt_ms; R_basis = 'spline'; 
 Q = length(Q_knots); R = length(R_knots);
 
 % get list, count of interior electrodes
@@ -38,9 +35,6 @@ Ncov = N_int + N_spatial_cov;
 NT = d.T;
 
 % initialize design matrix, response process
-% X = zeros(N_int*NT,Ncov);
-% y = zeros(N_int*NT,1);
-
 ps = [];
 count = 1;
 % for response = 1:d.N_channels
@@ -73,15 +67,6 @@ for response = 45
       p = p.add_covar('pop-hist3',C_left,R_knots,R_basis);
       p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
     end
-
-%     m = m.makeX(d,p); % fprintf('Made design matrix\n');
-%     trange = (count-1)*NT + (1:NT);
-%     cov_ind = [count Ncov+(-N_spatial_cov+1:0)];
-%     count = count+1;
-%     X(trange,:) = m.X; % all parameters assumed to be = across grid    
-%     varind = [count N_int+(1:N_spatial_cov)];
-%     X(trange,varind) = m.X;
-%     y(trange) = d.dn(response,:)';
     
     m = m.fit(d,p); m, m.plot(d,p); pause; clf;
 %     m = m.fit(d,p); m, m.gof(d); pause; clf;
@@ -89,13 +74,3 @@ for response = 45
     ps = p; % save parameters
   end
 end
-
-% %% network model
-% [b,dev,stats] = glmfit(X,y,'poisson','constant','off');
-% m = pp_model();
-% m.X = X; m.y = y; m.b = b; m.W = stats.covb; m.fit_method = 'glmfit';
-% m.CIF = glmval(b,X,'log','constant','off');
-% m = m.calcGOF();
-% figure, m.plot(d,p)
-% figure, m.gof(d)
-% save(file_name '_m1','-v7.3','m');
