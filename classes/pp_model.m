@@ -650,6 +650,7 @@
             ylabel('lag time [ms]');
 %             title({p.covariate_names{covar_num}; d.Name});
         end
+        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
       end
       update_fig(); % change font size, interpreter
     end

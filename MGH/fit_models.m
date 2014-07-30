@@ -7,39 +7,43 @@ N = Neuroport(patient_name);
 
 d = get_spikes2(patient_name,seizure_name,data_type,d1thresh,d2thresh);
 % d = d.remove_outlier_counts();
-d = get_big_spikes(d,0.1);
+dall = d0.sub_time(110,160);
+dsmall = dall; 
+dbig = get_big_spikes(dall,0.1);
+dsmall.dn = dsmall.dn - dbig.dn;
 
 %% 
+% d = dall;
+d = dsmall;
+d.dn = [d.dn; dbig.dn];
 
 % file_name = 'wave_model_s45';
 m = pp_model();
 
+% set knots
+dt_ms = round(.001 / d.dt);
 T_knots = [0 1]; T_basis = 'indicator';
 % T_knots = [0 1]; T_basis = 'spline';
-dt_ms = round(.001 / d.dt);
 % Q_knots = [] * dt_ms; Q_basis = '';
-Q_knots = [1 300:200:900] * dt_ms; Q_basis = 'spline'; 
-R_knots = []; R_basis = '';
-% R_knots = [0 5 20]  * dt_ms; R_basis = 'spline'; 
+% R_knots = []; R_basis = '';
+Q_knots = [1 30 70 100 200 500] * dt_ms; Q_basis = 'spline';
+R_knots = [0 5 20]  * dt_ms; R_basis = 'spline'; 
 Q = length(Q_knots); R = length(R_knots);
 
 % get list, count of interior electrodes
+% use it to count total covariates
 chans = cellstr2num(d.labels);
 int_elec = N.interior();
 N_int = length(int_elec);
-N_spatial_cov = 1*(R + (2*isequal(R_basis,'spline')*(R>0)));
-N_int_cov = Q+(2*isequal(Q_basis,'spline')*(Q>0));
-% N_int_cov = N_int*(Q+(2*isequal(Q_basis,'spline')*(Q>0)));
-% Ncov = 1+N_int_cov+N_spatial_cov;
-Ncov = N_int + N_spatial_cov;
-NT = d.T;
+N_cov = 1 + 2*(Q+2)*(Q>0) + 4*(R+2)*(R>0); % baseline rate + self-history + spatial
+p=[];
+% count = 1; cols = {'b','r','k','m','g'};
 
-% initialize design matrix, response process
-ps = [];
-count = 1;
 % for response = 1:d.N_channels
+% for response = int_elec(1:5)
 for response = 45
   response
+%   PLOT_COLOR = cols{count};
   m = pp_model();
   p = pp_params();
   p.response = response;
@@ -55,10 +59,9 @@ for response = 45
 %     D0 = d.sub_data([response,C_up,C_down,C_left,C_right]);
     
     p = p.add_covar('rate',0,T_knots,T_basis); % baseline rate
-
     if Q>0
       p = p.add_covar('self-history',response,Q_knots,Q_basis);
-%       p = p.add_covar('self-history2',response+1,Q_knots,Q_basis);
+      p = p.add_covar('self-history2',response+d0.N_channels,Q_knots,Q_basis);
     end
     
     if R>0
@@ -68,9 +71,11 @@ for response = 45
       p = p.add_covar('pop-hist4',C_right,R_knots,R_basis);
     end
     
-    m = m.fit(d,p); m, m.plot(d,p); pause; clf;
+    m = m.fit(d,p); m, %m.plot(d,p); pause(0.1); %clf;
 %     m = m.fit(d,p); m, m.gof(d); pause; clf;
-    
-    ps = p; % save parameters
+    m.X = []; ms{count} = m;   
+    count=count+1;
   end
 end
+
+% save([d.name '_chanmodels.mat'],'-v7.3','ms','p');
