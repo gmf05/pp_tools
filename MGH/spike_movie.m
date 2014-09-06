@@ -1,5 +1,5 @@
 patient_name = 'MG49';
-seizure_name = 'Seizure45';
+seizure_name = 'Seizure36';
 data_type = 'LFP';
 thresh = 1;
 N = Neuroport(patient_name);

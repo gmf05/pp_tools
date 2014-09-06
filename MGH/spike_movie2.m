@@ -1,12 +1,13 @@
 % data parameters
 patient_name = 'MG49';
-seizure_name = 'Seizure45';
+seizure_name = 'Seizure36';
 data_type = 'LFP';
 d1thresh = 0.5;
 d2thresh = 1;
 % tmin = 120; tmax = 125;
 % tmin = 100; tmax = 110;
-tmin = 120; tmax = 150;
+% tmin = 120; tmax = 150;
+tmin = 110; tmax = 130;
 
 % get electrode array
 N = Neuroport(patient_name);
@@ -88,7 +89,7 @@ for i = 1:size(I,1)
     h2{n} = plot(tsz([ti2 ti2]), 2*[mn mx], 'r', 'linewidth',2);
     ylim([1.1*mn 1.1*mx]);
 %     xlim([tsz(ti1)-0.05 tsz(ti2)+0.05]);
-    xlim([120,125])    
+    xlim([tmin,tmax])
   end
   pause;
 
@@ -107,8 +108,8 @@ for i = 1:size(I,1)
   dsFactor = 30;
   tind = ti1:dsFactor:ti2;
   dn0 = cumdownsample(dpp.dn(:,ti1:ti2),dsFactor);
-%   mov = N.plot(dnorm(:,tind),[],dpp.t(tind),dn0);
-%   pause; 
+  mov = N.plot(dnorm(:,tind),[],dpp.t(tind),dn0);
+  pause; 
   
   % remove lines denoting interval
   for n = 1:Nchans

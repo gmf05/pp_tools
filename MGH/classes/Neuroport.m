@@ -67,15 +67,23 @@ classdef Neuroport
         error('One (or more neighbors) do not exist');
       end      
     end
-      
+    
+    function blank(obj)
+    R = 0.5;
+    % plot a blank 2d-array
+    cla;
+    title('Neuroport array');
+    for n = 1:obj.N_electrodes
+      fill(obj.coord(n,1) + [-R -R R R], obj.coord(n,2) + [-R R R -R], 'w'); hold on;
+    end
+    axis off, box off       
+    end
+    
     function mov = plot(obj,Ws,cax,taxis,dn)
 
     if nargin<2
-      if isempty(obj.Ws)
-        Ws = ones(96,1);
-      else
-        Ws = obj.Ws;
-      end
+      if isempty(obj.Ws), Ws = ones(96,1);
+      else Ws = obj.Ws; end
     end
             
     if nargin<3 || isempty(cax)
@@ -86,11 +94,9 @@ classdef Neuroport
     
     spikeFlag = (nargin>=5);    
     
-    mov = [];
+    % parameters
     C = cax(2)-cax(1);    
     R = 0.5;
-    R2 = 0.2;
-    theta = 0:0.2:2*pi;
     if size(Ws,2)==obj.N_electrodes && size(Ws,1)~=obj.N_electrodes, Ws = Ws'; end
     T = size(Ws,2);
 
@@ -113,29 +119,20 @@ classdef Neuroport
           col_ind = max(col_ind,1);
         end
         col = color_RGB(col_ind,:);
-%         col = reshape(my_img(n,:,:),1,[]); % phase intensity
         fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
 %         text(x,y,num2str(n),'fontsize',22);
       end
       
       if spikeFlag && any(dn(:,t))
         for n = find(dn(:,t))'
-%           fill(obj.coord(n,1)+R2*cos(theta),obj.coord(n,2)+R2*sin(theta),'w');
-%           text(obj.coord(n,1),obj.coord(n,2),'o','fontsize',14,'fontweight','bold','color','r');
-          text(obj.coord(n,1),obj.coord(n,2),'x','fontsize',14,'fontweight','bold');
+          text(obj.coord(n,1),obj.coord(n,2),'x','fontsize',14,'fontweight','bold','color','k');
         end
       end
       
       axis off, box off      
-      title(['time = ' num2str(taxis(t))]);
-      
-%       axis xy;
-%       set(gca,'XTick',[]);
-%       set(gca,'YTick',[]);      
-%       xlabel(['time = ' num2str(taxis(t))]);
-%       mov(t) = getframe;
-%       pause(0.02);
-      pause();
+      title(['time = ' num2str(taxis(t))]);      
+      mov(t) = getframe;
+      pause(0.02);
       if t<T, hold off; cla; end
     end
   end
@@ -195,26 +192,6 @@ classdef Neuroport
       W0(2,1,n) = W0(1,2,n);
     end
   end  
-  
-  function [D, WD] = spline_dir2(obj, multiknots, b, W)
-%     % initialize variables
-%     s = 0.5;
-%     [Ws, ys, Ls] = spline_cov(multiknots,b,W,s);
-%     
-%     N0 = length(Ls{1});
-%     i1=1:N0;
-%     i2=i1(end)+(1:N0);
-%     i3=i2(end)+(1:N0);
-%     i4=i3(end)+(1:N0);
-%         
-%     D = [ys{3} - ys{4}; ys{2} - ys{1}];
-%     WD = zeros(2,2,N0);
-%     WD(1,1,:) = diag(Ws(i3,i3))' + diag(Ws(i4,i4))' - 2 *diag(Ws(i3,i4))';
-%     WD(2,2,:) = diag(Ws(i1,i1))' + diag(Ws(i2,i2))' - 2 *diag(Ws(i1,i2))';
-%     WD(1,2,:) = diag(Ws(i2,i3))' - diag(Ws(i2,i4))' - diag(Ws(i1,i3))' + diag(Ws(i1,i4))';
-%     WD(2,1,:) = WD(1,2,:);
-    
-  end
   
   end
 end
