@@ -15,7 +15,8 @@ d = dall;
 dt_ms = round(.001 / d.dt);
 T_knots = [0 1]; T_basis = 'indicator';
 Q_knots = [1 30 70 100 200 500] * dt_ms; Q_basis = 'spline';
-R_knots = [0 5 20]  * dt_ms; R_basis = 'spline'; 
+% R_knots = [0 5 20]  * dt_ms; R_basis = 'spline'; 
+R_knots = [0 1 5]  * dt_ms; R_basis = 'spline'; 
 Q = length(Q_knots); R = length(R_knots);
 int_elec = N.interior();
 N_int = length(int_elec);
@@ -60,5 +61,5 @@ m = pp_model(b,W,X,y,C,'log');
 m.fit_method = 'glmfit';
 m.X = []
 
-% save([d.name '_networkmodel_allspikes.mat'],'-v7.3','m','p');
-save([d.name '_networkmodel_allspikes_early.mat'],'-v7.3','m','p');
+% save([d.name '_networkmodel2_allspikes.mat'],'-v7.3','m','p');
+save([d.name '_networkmodel2_allspikes_early.mat'],'-v7.3','m','p');

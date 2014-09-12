@@ -1,4 +1,4 @@
-clear;
+% clear;
 fprintf('\n  Point Process Toolbox: v 1.0\n');
 fprintf('Grant Fiddyment  Boston U, 01/2014\n \n');
 
