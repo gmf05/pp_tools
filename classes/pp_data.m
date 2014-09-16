@@ -386,8 +386,8 @@ classdef pp_data
     
     function intvls = spike_trigger(obj,thresh,lockout)
       % set parameters
-      dL = 0.0; dR = 0.2; % [sec]
-%       dL = 0; dR = 0; % [sec]
+%       dL = 0.05; dR = 0.2; % [sec]
+      dL = 0; dR = 0; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
 
       % get array of spike indices, channels
@@ -420,13 +420,18 @@ classdef pp_data
       end
     end
     
-    function spike_trigger_plot(obj,intvls)
+    function mov = spike_trigger_plot(obj,intvls)
 %       intvls = obj.spike_trigger(thresh,lockout);
       for i = 1:size(intvls,1)
         obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
         hold on;
-        pause;
+        pause(0.05);
+        mov(i) = getframe();
       end
+    end
+    
+    function spike_trigger_plot2(obj,intvls)
+      
     end
     
     function obj0 = sort_mean_time(obj,intvls)
