@@ -570,6 +570,7 @@
       end
       xlabel('time [s]');
       ylabel('[Hz]');
+      title(p.covariate_names{1});
       
       % OTHER COVARIATES----------
       for covar_num = 2:N_covar_types        
@@ -647,11 +648,12 @@
             end
             imagesc(d.t(t_ind), lag_axis, all_L);
             xlabel('time [s]');
-            ylabel('lag time [ms]');
-%             title({p.covariate_names{covar_num}; d.Name});
+            ylabel('lag time [ms]');            
         end
         xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
+        title(p.covariate_names{covar_num});
       end
+      
       update_fig(); % change font size, interpreter
     end
 
