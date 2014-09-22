@@ -12,9 +12,11 @@ if numISIs<3
   error('Too few data points');
 end
 
+figure
 z = zeros(1, numISIs);
 for j=1:numISIs                           
   z(j) = sum(cif(spike_ind(j)+1:spike_ind(j+1)));
+  plot([spk_ind(j) spike_ind(j+1)], z(j)*ones(1,2), 'bo'); pause
 end
 
 %---- rescale function is expontential               

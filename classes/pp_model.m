@@ -56,8 +56,8 @@
       if nargin>0
         obj.b = b;
         obj.W = W;
-        obj.X = X;
-        if nargin>3
+        if nargin>2
+          obj.X = X;
           obj.y = y;
           obj.CIF = C;
           obj.link = link;
