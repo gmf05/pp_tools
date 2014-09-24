@@ -259,19 +259,19 @@ classdef pp_data
 
     function obj = downsample(obj, dT)
       fprintf(['Downsampling point process data by a factor of ' num2str(dT) '...']);
-      t_old = obj.t;
-      dn_old = obj.dn;
+%       t_old = obj.t;
+%       dn_old = obj.dn;
       obj.t = obj.t(1:dT:end);
       obj.dt = obj.dt*dT;
-      obj.T = length(obj.t);      
+      obj.T = length(obj.t);     
       
       % method 1
-      obj.dn = zeros(obj.N_channels,obj.T);      
-      for i = 1:obj.N_channels
-        obj.dn(i,:) = hist(t_old(dn_old(i,:)>0), obj.t);
-      end
+%       obj.dn = zeros(obj.N_channels,obj.T);      
+%       for i = 1:obj.N_channels
+%         obj.dn(i,:) = hist(t_old(dn_old(i,:)>0), obj.t);
+%       end
            
-      % method 2
+%       % method 2
       obj.dn = cumdownsample(obj.dn,dT);
       
       fprintf('Done!\n');

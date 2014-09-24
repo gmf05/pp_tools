@@ -79,6 +79,18 @@ classdef Neuroport
     axis off, box off       
     end
     
+    function numbered(obj)
+    R = 0.5;
+    % plot a blank 2d-array
+    cla;
+    title('Neuroport array');
+    for n = 1:obj.N_electrodes
+      fill(obj.coord(n,1) + [-R -R R R], obj.coord(n,2) + [-R R R -R], 'w'); hold on;
+      text(obj.coord(n,1),obj.coord(n,2),num2str(n),'fontsize',20);
+    end
+    axis off, box off       
+    end
+    
     function mov = plot(obj,Ws,cax,taxis,dn)
 
     if nargin<2

@@ -5,18 +5,16 @@ function [ks_stat, ks_ci, z] = KStest(y,cif)
 % Output: ks_stat (KS score), ks_ci (confidence bound)
 %
 
-spike_ind = find(y);           
+spike_ind = [0; find(y)];
 numISIs = length(spike_ind)-1;
 
 if numISIs<3
   error('Too few data points');
 end
 
-figure
 z = zeros(1, numISIs);
 for j=1:numISIs                           
   z(j) = sum(cif(spike_ind(j)+1:spike_ind(j+1)));
-  plot([spk_ind(j) spike_ind(j+1)], z(j)*ones(1,2), 'bo'); pause
 end
 
 %---- rescale function is expontential               
@@ -26,11 +24,10 @@ rs_cdf = @(x)(unifcdf(x,0,1));
 % % rs_fn = @(x)(x);
 % % rs_cdf = @(x)(expcdf(x,1));
 
-
 z = rs_fn(z);
 [eCDF,xCDF] = ecdf(sort(z));
 aCDF = rs_cdf(xCDF);
 ks_stat = max(abs(aCDF-eCDF));
-ks_ci = 1.96/sqrt(numISIs+1);
+ks_ci = 1.36/sqrt(numISIs+1);
 
 end
