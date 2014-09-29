@@ -317,20 +317,20 @@
       
       % compute p-value for ks-statistic (from kstest2.m):
       % WARNING: still under construction
-% % %       n1     =  length(aCDF);
-% % %       n2     =  length(eCDF);
-% % %       n      =  n1 * n2 /(n1 + n2);
-% % %       lambda =  max((sqrt(n) + 0.12 + 0.11/sqrt(n)) * ks_stat , 0);
+      n1     =  length(aCDF);
+      n2     =  length(eCDF);
+      n      =  n1 * n2 /(n1 + n2);
+      lambda =  max((sqrt(n) + 0.12 + 0.11/sqrt(n)) * ks_stat , 0);
 % % %       
 % % %       %
 % % %       % 1-sided test:
 % % %       % % %    ks_p  =  exp(-2 * lambda * lambda);
 % % %       % 2-sided test (default):
 % % %       %  "Use the asymptotic Q-function to approximate the 2-sided P-value."
-% % %       j       =  (1:101)';
-% % %       ks_p  =  2 * sum((-1).^(j-1).*exp(-2*lambda*lambda*j.^2));
-% % %       ks_p  =  min(max(ks_p, 0), 1);
-      ks_p = NaN;
+      j       =  (1:101)';
+      ks_p  =  2 * sum((-1).^(j-1).*exp(-2*lambda*lambda*j.^2));
+      ks_p  =  min(max(ks_p, 0), 1);
+% % %       ks_p = NaN;
       obj.KS = [ks_stat,ks_ci,ks_p];
       
     end
@@ -425,6 +425,15 @@
             end
         end
       end
+    end
+    
+    function perf_pred(obj)
+      % function to handle perfect predictors
+      %
+      %
+      M = obj.b;
+      (num2str(M))
+      
     end
     
     function [b,stats] = glmfit0(obj, X, y_in, link)

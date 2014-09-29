@@ -387,7 +387,8 @@ classdef pp_data
     function intvls = spike_trigger(obj,thresh,lockout)
       % set parameters
 %       dL = 0.05; dR = 0.2; % [sec]
-      dL = 0; dR = 0; % [sec]
+      dL = 0.005; dR = 0.2; % [sec]
+%       dL = 0; dR = 0; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
 
       % get array of spike indices, channels
