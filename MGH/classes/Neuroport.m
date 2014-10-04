@@ -57,15 +57,16 @@ classdef Neuroport
       if isequal('MG49',obj.patient), int = setdiff(int, 89); end
     end
     
-    function [cup,cdown,cleft,cright] = neighbors(obj,i)
+    function Nbors = neighbors(obj,i)
       try
         cup = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)+1);
         cdown = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)-1);
         cleft = obj.arrayMap(obj.coord(i,1)-1,obj.coord(i,2));
-        cright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2));
+        cright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2));        
       catch 
         error('One (or more neighbors) do not exist');
-      end      
+      end
+      Nbors = [cup,cdown,cleft,cright];      
     end
     
     function blank(obj)

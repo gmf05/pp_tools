@@ -284,55 +284,9 @@
 
       % time rescaling & KS test (NOTE: Should only be for poisson
       % regression)
-      spike_ind = find(obj.y);         
-      numISIs = length(spike_ind)-1;
-        
-        if numISIs<3, error('Too few data points for goodness-of-fit'); end
-        
-        z = zeros(1, numISIs);
-        for j=1:numISIs                                                
-          z(j) = sum(obj.CIF(spike_ind(j)+1:spike_ind(j+1)));
-        end
-        
-        switch obj.rs
-          case 'idenity'
-            rs_cdf = @(z)(expcdf(z));
-          case 'exp'
-            z = 1-exp(-z);
-            rs_cdf = @(z)(unifcdf(z,0,1));
-        end
-        
-        [eCDF,xCDF] = ecdf(sort(z));
-        aCDF = rs_cdf(xCDF);
-        ks_stat = max(abs(aCDF-eCDF));
-        ks_ci = 1.96/sqrt(numISIs+1);
-      
-%       catch
-%           z = [];
-%           ks_stat = NaN;
-%           ks_ci = NaN;
-%       end
-      
+      [ks_stat,ks_ci,z,ks_p] = KStest(obj.y,obj.CIF);
       obj.rsISI = z;
-      
-      % compute p-value for ks-statistic (from kstest2.m):
-      % WARNING: still under construction
-      n1     =  length(aCDF);
-      n2     =  length(eCDF);
-      n      =  n1 * n2 /(n1 + n2);
-      lambda =  max((sqrt(n) + 0.12 + 0.11/sqrt(n)) * ks_stat , 0);
-% % %       
-% % %       %
-% % %       % 1-sided test:
-% % %       % % %    ks_p  =  exp(-2 * lambda * lambda);
-% % %       % 2-sided test (default):
-% % %       %  "Use the asymptotic Q-function to approximate the 2-sided P-value."
-      j       =  (1:101)';
-      ks_p  =  2 * sum((-1).^(j-1).*exp(-2*lambda*lambda*j.^2));
-      ks_p  =  min(max(ks_p, 0), 1);
-% % %       ks_p = NaN;
-      obj.KS = [ks_stat,ks_ci,ks_p];
-      
+      obj.KS = [ks_stat,ks_ci,ks_p];      
     end
     
     function obj = makeX(obj,d,p)
@@ -431,9 +385,13 @@
       % function to handle perfect predictors
       %
       %
-      M = obj.b;
-      (num2str(M))
+      yind = find(y);
       
+      % for each index in yind, find time afterwards
+      % where we should eliminate data
+      
+      tind = yind+0;
+      obj.X(tind,:) = [];      
     end
     
     function [b,stats] = glmfit0(obj, X, y_in, link)
@@ -730,9 +688,9 @@
       
     function [ks_stat, ks_ci] = ks_plot(obj)
       global PLOT_COLOR     
-      Z = 1.96; 
+%       Z = 1.96; 
       % Z = 1.63;
-      % Z = 1.36;
+      Z = 1.36;
       %   calculate ks statistic, confidence bounds
       numISIs = length(obj.rsISI);      
       if numISIs>2
