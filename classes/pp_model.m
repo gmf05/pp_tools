@@ -512,6 +512,7 @@
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+%            jbfill(?? shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
           else
             [t_axis,Y] = plot_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
@@ -526,7 +527,7 @@
             Ylo = Y - Z*sqrt(diag(W1)); Yhi = Y + Z*sqrt(diag(W1)); % 1d case
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             for t = 1:T0-1
-              shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR}); 
+              shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR},1);
               hold on;
             end
           else
@@ -551,7 +552,8 @@
                   [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+%                 jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -564,7 +566,8 @@
                   error('write more code!');
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+%                   jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
