@@ -52,7 +52,7 @@
   end
     
   methods
-    % Constructor
+    % Constructor  
 %     function obj = pp_model(b,W,X,y,C,link)
     function obj = pp_model(name,b,W,X,y,C,link)
 %       obj.name = name;
