@@ -69,6 +69,19 @@
         end
       end
     end
+    
+    function obj2 = sub_model(obj,ind)
+%       obj2 = pp_model(obj.name);
+      obj2 = pp_model();
+      obj2.b = obj.b(ind);
+      obj2.fit_method = obj.fit_method;
+      obj2.link = obj.link;
+      if size(obj.W,2)>0, obj2.W = obj.W(ind,ind); end
+      if size(obj.X,2)>0, obj2.X = obj.X(:,ind);
+        obj2.CIF = exp(obj2.X*obj2.b);
+        obj2 = obj2.calcGOF();
+      end
+    end
         
     function obj = fit(obj, d, p)
     % pp_model.fit(d, p)
@@ -651,6 +664,105 @@
       
       update_fig(); % change font size, interpreter
     end
+    
+    function plot2(obj, d, p)
+      
+      global PLOT_COLOR;
+      global DO_CONF_INT;
+      global DO_MASK;
+      
+      Z = 2;
+      N_covar_types = length(p.covariate_names);
+      burn_in = p.get_burn_in();
+      % NOTE: ASSUMES 'rate' is first covariate
+      % and all other types ('self-hist', 'ensemble', etc)
+      % come afterwards
+            
+      for covar_num = 1:N_covar_types        
+        subplot(N_covar_types,1,covar_num); hold on;
+        ind = p.covariate_ind{covar_num};
+        switch obj.fit_method
+          case 'glmfit'
+            switch p.covariate_bases{covar_num}
+              case 'spline'
+                if DO_CONF_INT
+                  [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
+                  lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
+                  L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
+                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+%                 jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+                else
+                  [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
+                  lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
+                  plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
+                end
+              case 'indicator'
+                lag_axis = p.covariate_knots{covar_num};
+                if DO_CONF_INT                  
+                  Y = exp(obj.b(ind));                  
+                  error('write more code!');
+                  % assign Y, Ylo, Yhi based on covariance structure
+                  L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
+                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+%                   jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+                else
+                  plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
+                end
+            end
+            plot([lag_axis(1) lag_axis(end)],[1 1],'k--');
+            xlabel('lag time [ms]');
+            ylabel('mod.');
+
+          case {'filt', 'smooth'}
+            t_ind = burn_in+1:p.downsample_est:d.T; % modified time axis
+            NT = length(t_ind);
+            switch p.covariate_bases{covar_num}
+              case 'spline'                
+                lag_axis = p.covariate_knots{covar_num}(1):p.covariate_knots{covar_num}(end);
+                lag_axis = lag_axis*d.dt*1e3; % covert from bins to ms
+                all_L = zeros(length(lag_axis), NT);            
+                for t = 1:NT
+                  if DO_MASK
+                    [~,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s,obj.W{t}(ind,ind),Z);
+                    % mask y:
+                    good_ind = [find(Yhi>0)', find(Ylo<0)'];
+                    bad_ind = setdiff(1:length(lag_axis), good_ind);
+                    Y(bad_ind) = 0;
+                    all_L(:,t) = exp(Y');
+                  else
+                    [~,Y] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s);
+                    all_L(:,t) = exp(Y');                
+                  end
+                end
+              case 'indicator'
+                lag_axis = p.covariate_knots{covar_num}(1):p.covariate_knots{covar_num}(end);
+                lag_axis = lag_axis*d.dt*1e3; % covert from bins to ms
+                all_L = zeros(length(lag_axis), NT);
+                for t = 1:NT
+                  if DO_MASK
+                    Y = exp(obj.b{t_ind(t)}(ind));
+                    % assign Ylo, Yhi
+                    error('write more code!');                    
+                    % mask Y:
+                    good_ind = [find(Yhi>0), find(Ylo<0)];
+                    bad_ind = setdiff(1:length(lag_axis), good_ind);
+                    Y(bad_ind) = 0;
+                    all_L(:,t) = exp(Y');
+                  else
+                    all_L(:,t) = exp(obj.b{t_ind(t)}(ind));
+                  end
+                end
+            end
+            imagesc(d.t(t_ind), lag_axis, all_L);
+            xlabel('time [s]');
+            ylabel('lag time [ms]');            
+        end
+        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
+        title(p.covariate_names{covar_num});
+      end
+      
+      update_fig(); % change font size, interpreter
+    end
 
     function gof_plot(obj, d)      
 %
@@ -741,8 +853,13 @@
 
       % plotting
       plot(eCDF, aCDF, 'color', PLOT_COLOR, 'LineWidth', 2); hold on;
-      plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
+      h1 = plot([0:0.2:1], ks_ci+[0:0.2:1], 'r-',  [0:0.2:1], -ks_ci+[0:0.2:1], ...
           'r-', [0:0.2:1], [0:0.2:1], 'r--', 'LineWidth', 3);
+      for n=1:3, 
+        hAnnotation = get(h1(n),'Annotation');
+        hLegendEntry = get(hAnnotation','LegendInformation');
+        set(hLegendEntry,'IconDisplayStyle','off')
+      end
       set(gca,'XTick',[0:0.2:1]);
       set(gca,'YTick',[0:0.2:1]);
       title('KS plot');

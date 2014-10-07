@@ -15,7 +15,7 @@ classdef pp_params
     %   downsample_est: factor for downsampling estimates (necessary for
     %                   filter, smoother)
     
-  properties
+  properties    
     covariate_names % e.g. 'rate', 'self-hist', 'ensemble'
     covariate_channels % channels corresponding to each covar
     covariate_knots % partition of time/lag axis
@@ -79,6 +79,12 @@ classdef pp_params
         ind = obj.covariate_ind{end}(end) + (1:N);
       end
       obj.covariate_ind{end+1} = ind;
+    end
+    
+    function obj2 = get_covar(obj, i)
+      obj2 = pp_params();
+      obj2 = obj2.add_covar(obj.covariate_names{i},obj.covariate_channels{i},obj.covariate_knots{i},obj.covariate_bases{i});
+      obj2.fit_method = obj.fit_method; 
     end
     
     function burn_in = get_burn_in(obj)
