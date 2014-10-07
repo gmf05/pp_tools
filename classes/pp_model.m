@@ -1,6 +1,7 @@
   classdef pp_model
 %
 %   properties
+%     name % description of what is being modeled      
 %     b % parameters (column vector)
 %     W % covariance matrix
 %     X % design (data) matrix
@@ -33,6 +34,7 @@
 %   end
 
   properties
+    name % brief description of the model (string)
     b % parameters (column vector)
     W % covariance matrix
     X % design (data) matrix
@@ -51,9 +53,11 @@
     
   methods
     % Constructor
-    function obj = pp_model(b,W,X,y,C,link)      
+%     function obj = pp_model(b,W,X,y,C,link)
+    function obj = pp_model(name,b,W,X,y,C,link)
+%       obj.name = name;
       obj.rs = 'exp';
-      if nargin>0
+      if nargin>1
         obj.b = b;
         obj.W = W;
         if nargin>2
@@ -269,7 +273,7 @@
       fprintf(['Done!\n']);
 
       obj = obj.calcGOF(); % goodness-of-fit
-    end
+    end        
     
     function obj = calcGOF(obj, p)      
       switch obj.link
@@ -287,6 +291,27 @@
       [ks_stat,ks_ci,z,ks_p] = KStest(obj.y,obj.CIF);
       obj.rsISI = z;
       obj.KS = [ks_stat,ks_ci,ks_p];      
+    end
+    
+    function obj = diff(obj,obj2)
+      % parent = M(m); child = N(m);
+%   mp = ms{parent};
+%   mc = ms{child};      
+      % calling object (obj) is parent
+      dDev = obj.dev - obj2.dev;
+      dAIC = obj.AIC - obj2.AIC;
+      P1 = size(obj.b,1); P2 = size(obj2.b,1);      
+      F1 = dDev/(P1-P2);
+      F2 = dAIC/(P1-P2);
+      pchi1 = 1-chi2cdf(dDev,P1-P2);
+      pchi2 = 1-chi2cdf(dAIC,P1-P2);
+      pF1 = 1-fcdf(F1,P1,P1-P2);
+      pF2 = 1-fcdf(F2,P1,P1-P2);
+      Ps = [pchi1,pchi2,pF1,pF2];
+      
+      % make model table
+      
+      
     end
     
     function obj = makeX(obj,d,p)
