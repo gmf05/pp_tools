@@ -136,7 +136,6 @@ classdef pp_data
     
     function plot(obj, plot_type, params)
       global PLOT_COLOR
-      global FONT_SIZE 
       if nargin<2, plot_type = 'rate'; end
       if nargin<3, params = pp_params(); end
       
@@ -171,8 +170,8 @@ classdef pp_data
         case 'psth'
           plot(obj.t,sum(obj.dn,1),PLOT_COLOR);
           xlabel('time [s]')
-          ylabel('rate [Hz]')
-          title({ttl ; ' - % channels active per dt'}); grid on;
+          ylabel('no. channels')
+          title({ttl ; ' - no. channels active per dt'}); grid on;
         case 'heat'
           win_rates = zeros(obj.N_channels, N_windows);
           for i = 1:obj.N_channels
@@ -182,7 +181,7 @@ classdef pp_data
               count = count+dW_bins;
             end
           end
-          imagesc(win_rates);
+          imagesc(Ts,1:obj.N_channels,win_rates);
           xlabel('time [s]')
           ylabel('channel')
           colorbar;
@@ -212,15 +211,25 @@ classdef pp_data
           ylabel('ISI [ms]');
           title('inter-spike-interval (ISI) histogram');
           colorbar();
-        case 'raster'          
+        case 'raster'
+          gca(); hold on;
+          % fixing plotting so it's not horrendously slow...
           for i = 1:obj.N_channels
             ind = find(obj.dn(i,:));
-            for k = 1:length(ind)
-              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR); hold on;
-            end
+            plot(obj.t(ind), i*ones(1,length(ind)), [PLOT_COLOR '.']);
           end
-          xlabel('time [s]','fontsize',FONT_SIZE);
-          ylabel('channel','fontsize',FONT_SIZE);
+          
+          % old plotting routine
+          %
+% %           for i = 1:obj.N_channels
+% %             ind = find(obj.dn(i,:));
+% %             for k = 1:length(ind)
+% %               plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR);
+% %             end
+% %           end
+          
+          xlabel('time [s]');
+          ylabel('channel');
           title([ttl ' raster plot']);
           
         case 'raster-marks'
@@ -243,12 +252,11 @@ classdef pp_data
               hold on;
             end
           end
-          xlabel('time [s]','fontsize',FONT_SIZE);
-          ylabel('channel','fontsize',FONT_SIZE);
+          xlabel('time [s]');
+          ylabel('channel');
           title([ttl ' raster plot']);
           
       end
-      update_fig();
     end
     
     function obj0 = remove_outlier_counts(obj)

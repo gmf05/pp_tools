@@ -54,13 +54,13 @@
   methods
     % Constructor  
 %     function obj = pp_model(b,W,X,y,C,link)
-    function obj = pp_model(name,b,W,X,y,C,link)
-%       obj.name = name;
+    function obj = pp_model(name,b,W,X,y,C,link)      
       obj.rs = 'exp';
       if nargin>1
+        obj.name = name;
         obj.b = b;
         obj.W = W;
-        if nargin>2
+        if nargin>3
           obj.X = X;
           obj.y = y;
           obj.CIF = C;
@@ -558,6 +558,7 @@
           end
         case 'indicator'
           t_axis = p.covariate_knots{1} * (d.t(end)-d.t(1)) + d.t(1);
+          gca(); hold on;
           if DO_CONF_INT
             Y = b1;
             % NOTE: NEED TO MODIFY HOW Ylo, Yhi
@@ -565,8 +566,7 @@
             Ylo = Y - Z*sqrt(diag(W1)); Yhi = Y + Z*sqrt(diag(W1)); % 1d case
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             for t = 1:T0-1
-              shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR},1);
-              hold on;
+              shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR},1);              
             end
           else
             for t = 1:T0-1
@@ -661,8 +661,7 @@
         xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
         title(p.covariate_names{covar_num});
       end
-      
-      update_fig(); % change font size, interpreter
+
     end
     
     function plot2(obj, d, p)
@@ -761,7 +760,6 @@
         title(p.covariate_names{covar_num});
       end
       
-      update_fig(); % change font size, interpreter
     end
 
     function gof_plot(obj, d)      
@@ -823,7 +821,6 @@
       title('$\lambda_t$','interpreter','latex');
       xlabel('time [s]');
       ylabel('[Hz]');
-      update_fig();
     end
       
     function [ks_stat, ks_ci] = ks_plot(obj)
@@ -867,7 +864,6 @@
       ylabel('Theoretical CDF');
 %       text(0.05, 0.75, ['KS stat: ', num2str(ks_stat,3)]);
 %       text(0.05, 0.67, ['95%  CI: ', num2str(ks_ci,3)]); 
-      update_fig();
     end
       
   
@@ -892,17 +888,15 @@
         title('QQ plot');
         xlabel('Empirical quant.');
         ylabel('Theoretical quant.');
-        update_fig();
       end
     end
     
     function isi_plot(obj)
       [yh,xh]=hist(obj.rsISI);
       bar(xh,yh./length(obj.rsISI));
-      title('rescaled ISIs','interpreter','latex');
+      title('rescaled ISIs');
       xlabel('$z_j$','interpreter','latex');
-      ylabel('PDF','interpreter','latex');
-      update_fig();
+      ylabel('PDF');
     end
     
     function res = res_plot(obj, t)
@@ -916,7 +910,6 @@
       title('residual process');
       ylabel('observed - estimated');
       xlabel('time [s]');
-      update_fig();
     end
     
     function ac = ac_plot(obj)
@@ -929,7 +922,6 @@
       plot(lags,bounds(2),'r--','LineWidth', 2);
       title('autocorrelation');
       xlabel('lags');
-      update_fig();
     end
   end
 end

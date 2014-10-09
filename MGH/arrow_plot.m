@@ -32,8 +32,10 @@ x0 = Y(3,:)-Y(4,:);
 %
 % then plot...
 SCALE = 0.1;
-x = x0(1)*SCALE;
-y = y0(1)*SCALE;
+% x = x0(1)*SCALE;
+% y = y0(1)*SCALE;
+x = mean(x0-1)*SCALE;
+y = mean(y0-1)*SCALE;
 
 plot(ctr(1)+[0 x], ctr(2)+[0 y], PLOT_COLOR);
 
