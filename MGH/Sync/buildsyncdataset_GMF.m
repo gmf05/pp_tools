@@ -33,6 +33,7 @@ lfpSyncCh = info.LFP.SyncCh;
 ecogFs = ecogProp.SampleRate(1);
 ecogSzOn = max([1, round((info.StartTime - onset) * ecogFs)]);
 ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
+ecogRef = ecogRef(ecogSzOn:ecogSzOff);
 
 tic
 OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
@@ -76,18 +77,32 @@ lfpIdx0 = [1; lfpIdx - lfpSzOn];
 count = 1;
 lfp_t_ind = [];
 
+% list of duratons observed in each device
+dti_lfp = diff(lfpIdx0);
+dts_lfp = dti_lfp/lfpFs;
+dti_ecog = diff(ecogIdx0);
+dts_ecog = dti_ecog/ecogFs;
+% differences in the durations tell us how much to adjust
+% the time axes
+dts_diff = diff([dts_lfp dts_ecog]');
+
 for i = 1 : length(ecogIdx0)-1
-    dt_ecog = tECoG(ecogIdx0(i+1))-tECoG(ecogIdx0(i));
-    dt_lfp = tLFP(lfpIdx0(i+1))-tLFP(lfpIdx0(i));
+%     dt_ecog = tECoG(ecogIdx0(i+1))-tECoG(ecogIdx0(i));
+%     dt_lfp = tLFP(lfpIdx0(i+1))-tLFP(lfpIdx0(i));
+%     
+%     % compute time difference (in # of bins)
+%     dt_diff = abs(dt_ecog - dt_lfp);
+%     dt_diff_bins = round(dt_diff * lfpFs);    
+%     
+%     % clip given # of bins from LFP time axis
+%     dt_i = round(min(dt_lfp,dt_ecog)*lfpFs);
+%     lfp_t_ind = [lfp_t_ind, count : count + dt_i - 1];
+%     count = count + dt_i + dt_diff_bins;
     
-    % compute time difference (in # of bins)
-    dt_diff = dt_ecog - dt_lfp;
-    dt_diff_bins = round(dt_diff * lfpFs);
-    
-    % clip given # of bins from LFP time axis
-    dt_i = round(dt_lfp*lfpFs);
-    lfp_t_ind = [lfp_t_ind, count : count + dt_i - 1];
-    count = count + dt_i + dt_diff_bins;
+    dt_diff_bins = round(abs(dts_diff(i))*lfpFs);
+    dt_i = dti_lfp(i) - dt_diff_bins;
+    lfp_t_ind = [lfp_t_ind, count:count+dt_i];
+    count = count+dti_lfp(i);
 end
 lfp_t_ind = [lfp_t_ind count:lfpSzOff-lfpSzOn];
 

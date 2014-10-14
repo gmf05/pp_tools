@@ -36,7 +36,7 @@ SCALE = 0.1;
 % y = y0(1)*SCALE;
 x = mean(x0-1)*SCALE;
 y = mean(y0-1)*SCALE;
-
+x0=x; y0=y;
 plot(ctr(1)+[0 x], ctr(2)+[0 y], PLOT_COLOR);
 
 end

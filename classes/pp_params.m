@@ -72,7 +72,8 @@ classdef pp_params
       obj.covariate_bases{end+1} = basis;
       N = length(knots);
       N = N + 2*isequal(basis,'spline');
-      N = N - 1*isequal(basis,'indicator')*isequal(name,'rate');
+%       N = N - 1*isequal(basis,'indicator')*isequal(name,'rate');
+      N = N - 1*(channels==0);
       if isempty(obj.covariate_ind)        
         ind = 1:N;
       else

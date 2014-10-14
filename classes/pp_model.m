@@ -296,6 +296,10 @@
         case 'logit'
           obj.LL = sum(log(binopdf(obj.y,ones(size(obj.y)),obj.CIF)));
           obj.dev = 2*(sum(log(binopdf(obj.y,ones(size(obj.y)),obj.y))) - obj.LL);
+        case 'identity'
+          error('write more code');
+    %       obj.LL = sum(log(normpdf(obj.y,obj.CIF,1))); % THIS IS WRONG> FIX IT
+    %       obj.dev = 2*(sum(log(normpdf(obj.y,obj.y,1))) - obj.LL); % THIS IS WRONG> FIX IT
       end
       obj.AIC = obj.dev+2*size(obj.b,1);
 
@@ -442,6 +446,7 @@
           linkFn = @(x) x;
           ilinkFn = @(x) x;
           linkFnprime = @(x) ones(size(x));
+          sqrtvarFn = @(x) ones(size(x));
           mu = y; % initial conditions
         case 'log'
           linkFn = @(x) log(x);
@@ -550,7 +555,6 @@
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
-%            jbfill(?? shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
           else
             [t_axis,Y] = plot_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
@@ -591,7 +595,6 @@
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
-%                 jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -605,7 +608,6 @@
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
-%                   jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
@@ -689,7 +691,6 @@
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
-%                 jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -703,7 +704,6 @@
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
-%                   jbfill(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end

@@ -30,7 +30,7 @@ DO_MASK = true;
 
 % font preferences in figures
 fontname = 'Helvetica';
-fontsize = 18;
+fontsize = 12;
 set(0,'defaultaxesfontname',fontname);
 set(0,'defaulttextfontname',fontname);
 set(0,'defaultaxesfontsize',fontsize);
