@@ -1,125 +1,125 @@
-function data = get_spikes(patient_name,seizure_name,data_type,thresh)
+function data = get_spikes(patient_name,seizure_name,data_type,d1thresh,d2thresh)
   
-  global DATA; min_refract = 1;
+  global DATA;
  
-  data_name = [patient_name '_' seizure_name '_' data_type '_thresh' num2str(thresh)];
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh)];
-  pp_filename = [DATA '/' patient_name '/' data_name '_pp.mat'];
-  spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
-  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered.mat'];  
+  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(d1thresh) '_' num2str(d2thresh)];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(d1thresh) ',' num2str(d2thresh)];
+  pp_filename = [DATA '/' patient_name '/' data_name '_dpp.mat'];
+  spikes_filename = [DATA '/' patient_name '/' data_name '_dspikes.mat'];
+  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered_lo.mat'];
   
   if exist(pp_filename,'file')
     fprintf(['Loaded ' data_name0 '\n']);
     load(pp_filename)
-  else    
+  else
     if exist(spikes_filename, 'file')
       fprintf(['Cannot find point process object for ' data_name0 '\n']);
       fprintf('Loading spike times...');
-      load(spikes_filename)
+      load(spikes_filename);      
       fprintf('Done!\n');
+      
+      dt = t(2)-t(1);
+      tfull = t(1):dt:t(end); % NOTE: needed to switch axis from t to tfull here
+      N_channels = length(labels);
+      dn = zeros(N_channels,length(tfull));
+      for n = 1:N_channels
+        dn(n,:) = hist(spikes{n},tfull); 
+      end
+      
     else
       fprintf(['Cannot find spikes for ' data_name0 '\n']);
+      fprintf('Loading raw data...');
+      load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
+      fprintf('Done!\n');
+      
+      switch data_type
+        case 'EEG'
+          szX = sz.EEG;
+          t = sz.ECoG.Time;
+        case 'ECoG'
+          szX = sz.ECoG;
+          t = sz.ECoG.Time;
+        case {'LFP','MUA'}
+          szX = sz.LFP;
+          t = sz.LFP.Time;
+      end      
+      dpre = szX.Data'; % want channel x time
+      dt = t(2)-t(1);      
+      tfull = t(1):dt:t(end);
+      Tfull = length(tfull);
+      
       if exist(filtered_filename,'file')
         fprintf('Loading processed data...');
         load(filtered_filename);
         fprintf('Done!\n');
       else
-        fprintf('Cannot find processed data.\n');
-        fprintf('Loading raw data...\n');
-        load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat'],'sz');
-        fprintf('Done!\n');
-        
-        switch data_type
-          case 'EEG'
-            szX = sz.EEG;
-            t = sz.ECoG.Time;
-          case 'ECoG'
-            szX = sz.ECoG;
-            t = sz.ECoG.Time;
-          case {'LFP','MUA'}
-            szX = sz.LFP;
-            t = sz.LFP.Time;
-        end
-
-        fprintf('Preprocessing...');
+        fprintf('Cannot find processed data.\n');        
+        fprintf('Filtering...');
         szX.Onset = sz.Onset; szX.Offset = sz.Offset;
-        labels = szX.Labels;
+        labels = str2cell(szX.Labels);
         Fs = round(szX.SamplingRate);
         fNQ = Fs/2;
-        d = szX.Data;
-%         start_ind = getclosest(t,szX.Onset);
-%         end_ind = getclosest(t,t(end)-szX.Offset);
-%         t = t(start_ind:end_ind) - t(start_ind);
-%         d = d(start_ind:end_ind,:);
-        
-        % printing progress
-        for i = 1:size(d,2), i, d(:,i) = preprocessing(d(:,i), data_type); end
-%         d = preprocessing(d, data_type);
-        d = d'; % want channel x time
+        d = dpre;
+        for i = 1:size(d,1), i, d(i,:) = preprocessing(dpre(i,:), data_type); end
         save(filtered_filename,'-v7.3','d','t','labels');
         fprintf('Done!\n');
       end
-
+      
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
       N_channels = size(d,1);
+      T = size(d,2);
+%       dn = 0*d;
+      dn = zeros(N_channels,Tfull);
       spikes = cell(1,N_channels);
-      amps = cell(1,N_channels);
+      marks = cell(1,N_channels);
+      if ~exist('Fs','var'), Fs = round(1/(t(2)-t(1))); end
+      dW = round(.005*Fs); % how much shift to allow (# bins + or -)
+      
+      % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-        [spkind, amp] = hilbertspike(d(n,:),thresh,min_refract);
+        spkind = derivspike(d(n,:),d1thresh,d2thresh);
+        % post-process spkind to correspond to MINIMA over certain window
+        % a spike s gets placed on the interval [s-dW, s+dW]          
+        for i = 1:length(spkind)
+          i0 = spkind(i) - dW;
+          istart = max(1, spkind(i)-dW);
+          iend = min(spkind(i)+dW, T);
+          [~,shft] = min(dpre(n,istart:iend));
+          spkind(i) = istart + shft - 1;
+        end
+        spkind = unique(spkind);
+        % drop values 1 and 2 from spkind, if there
+        spkind(spkind==1)=[]; spkind(spkind==2)=[];        
         spikes{n} = t(spkind);
-        amps{n} = amp;
+        dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify 2nd arg "t" to be "full" time axis
+        d1 = zscore(diff(d(n,:))); d2 = zscore(diff(d1));
+        marks{n} = [dpre(n,spkind); d1(spkind-1); d2(spkind-2)];
       end
 
       fprintf('Done!\nSaving spikes...');
-      save(spikes_filename,'-v7.3','spikes','amps','labels','min_refract','t');
+      save(spikes_filename,'-v7.3','spikes','marks','labels','t');
       fprintf('Done!\n');
     end
-
-    % remove any channels with very large/small spike counts
-    N_channels = length(spikes);
-    dn = zeros(N_channels,length(t));
-    for n = 1:length(spikes), dn(n,:) = hist(spikes{n},t); end
-    cumspks = sum(dn,2); % all spike counts
-    cleantemp = removeoutliers(cumspks); % outliers removed
-    out = setdiff(cumspks, cleantemp); % set of outliers
-    N_out = length(out);
-    out_ind = [];
-    count = 1;
-    for i = 1:N_out
-      ind_i = find(cumspks==out(i));
-      Ni = length(ind_i);
-      out_ind(count:count+Ni-1) = ind_i;
-      count = count+Ni;
-    end
-    good_ind = setdiff(1:N_channels,out_ind);
-    dn = dn(good_ind,:);
-    if isequal(class(labels),'char')
-      labels = str2cell(labels(good_ind,:));
-    elseif isequal(class(labels),'cell')
-      labels = {labels{good_ind}};
-    end
-    amps = {amps{good_ind}};
-    fprintf(['Removed ' num2str(N_out) ' ' data_type ...
-      ' channels with too many/few spikes.\n']);
-    
-    % save point process object
+       
+    % save point process object    
 %     data = pp_data(dn,t);
-    data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',amps);
+    data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
     data.labels = labels;
     data.name = data_name;
-    data.marks = amps;
+    data.marks = marks;
     
-    switch data_type
-      case {'ECoG', 'EEG'}
-        fprintf('No downsampling.\n');
-      case 'LFP', 
-        fprintf('Trying to downsample by 32x\n');
-        try data = data.downsample(32); end;
-      case 'MUA'
-        fprintf('Need to figure out whether to downsample here\n');
-    end
+% %     % downsampling
+% %     switch data_type
+% %       case {'ECoG', 'EEG'}
+% %         fprintf('No downsampling.\n');
+% %       case 'LFP', 
+% %         fprintf('Trying to downsample by 32x\n');
+% %         try data = data.downsample(32); end;
+% %       case 'MUA'
+% %         fprintf('Need to figure out whether to downsample here\n');
+% %     end
     
     fprintf('Saving point process data object...');
     save(pp_filename, '-v7.3','data');
@@ -132,36 +132,23 @@ switch data_type
 
   %-------------------------- local field potential (LFP)
   case 'LFP'
-  fH = [0   0.5   1   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
-  fL = [0  200  200.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
-  fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
-  fS2 = [0  119.0 119.5 120.5  121.0  fNQ]/fNQ; zS2 = [1  1  0  0  1 1]/fNQ; % Stop2
-  fS3 = [0  179.0 179.5 180.5  181.0  fNQ]/fNQ; zS3 = [1  1  0  0  1 1]/fNQ; % Stop3
-  bL = firls(2000,fH,zH);
-  bH = firls(2000,fL,zL);
-  bS1 = firls(2000,fS1,zS1);
-  bS2 = firls(2000,fS2,zS2);
-  bS3 = firls(2000,fS3,zS3);
-
+%   fL = [0  59.5  60  fNQ]/fNQ;
+  fL = [0  55  60  fNQ]/fNQ;
+  zL = [1   1   0    0]/fNQ; % Lowpass
+  bL = firls(2000,fL,zL);
   d_post = d_pre;
-  d_post = filtfilt(bH,1,d_post);
   d_post = filtfilt(bL,1,d_post);
-  d_post = filtfilt(bS1,1,d_post);
-  d_post = filtfilt(bS2,1,d_post);
-  d_post = filtfilt(bS3,1,d_post);
-  d_post = zscore(d_post);
   %-------------------------- local field potential (LFP)
   
   %--------------------------  multiunit activity (MUA)
   case 'MUA'
-  fH = [0   299.5   300.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
+  fH = [0  0.5     1   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
   fL = [0 2999.5  3000.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
   bL = firls(2000,fH,zH);
   bH = firls(2000,fL,zL);
   d_post = d_pre;
   d_post = filtfilt(bH,1,d_post);
   d_post = filtfilt(bL,1,d_post);
-  d_post = zscore(d_post);
   %--------------------------  multiunit activity (MUA)
   
   %-------------------------- filtered ECoG
@@ -184,7 +171,6 @@ switch data_type
   d_post = filtfilt(bS1,1,d_post);
   % d_post = filtfilt(bS2,1,d_post);
   % d_post = filtfilt(bS3,1,d_post);s
-  d_post = zscore(d_post);
   %-------------------------- filtered ECoG
 
   %-------------------------- filtered EEG
@@ -195,7 +181,7 @@ switch data_type
   % fS2 = [0  119.0 119.5 120.5  121.0  fNQ]/fNQ; zS2 = [1  1  0  0  1 1]/fNQ; % Stop2
   % fS3 = [0  179.0 179.5 180.5  181.0  fNQ]/fNQ; zS3 = [1  1  0  0  1 1]/fNQ; % Stop3
   bL = firls(2000,fH,zH);
-  bH = firls(2000,fL,zL);
+  bH = firls(2000,fL,zL); 
   bS1 = firls(2000,fS1,zS1);
   % bS2 = firls(2000,fS2,zS2);
   % bS3 = firls(2000,fS3,zS3);
@@ -207,8 +193,8 @@ switch data_type
   d_post = filtfilt(bS1,1,d_post);
   % d_post = filtfilt(bS2,1,d_post);
   % d_post = filtfilt(bS3,1,d_post);s
-  d_post = zscore(d_post);
   %-------------------------- filtered EEG
 end
+%   d_post = zscore(d_post);
 end
 end
