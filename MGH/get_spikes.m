@@ -1,12 +1,10 @@
-function data = get_spikes(patient_name,seizure_name,data_type,d1thresh,d2thresh)
+function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
   
-  global DATA;
- 
-  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(d1thresh) '_' num2str(d2thresh)];
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(d1thresh) ',' num2str(d2thresh)];
-  pp_filename = [DATA '/' patient_name '/' data_name '_dpp.mat'];
-  spikes_filename = [DATA '/' patient_name '/' data_name '_dspikes.mat'];
-  filtered_filename = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type '_filtered_lo.mat'];
+  global DATA; % path to data 
+  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(-zthresh) '_' num2str(dT)]; % note -zthresh
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(zthresh) ',' num2str(dT)];
+  pp_filename = [DATA '/' patient_name '/' data_name '_pp.mat'];
+  spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
   
   if exist(pp_filename,'file')
     fprintf(['Loaded ' data_name0 '\n']);
@@ -20,7 +18,7 @@ function data = get_spikes(patient_name,seizure_name,data_type,d1thresh,d2thresh
       
       dt = t(2)-t(1);
       tfull = t(1):dt:t(end); % NOTE: needed to switch axis from t to tfull here
-      N_channels = length(labels);
+      N_channels = length(spikes);
       dn = zeros(N_channels,length(tfull));
       for n = 1:N_channels
         dn(n,:) = hist(spikes{n},tfull); 
@@ -42,60 +40,31 @@ function data = get_spikes(patient_name,seizure_name,data_type,d1thresh,d2thresh
         case {'LFP','MUA'}
           szX = sz.LFP;
           t = sz.LFP.Time;
-      end      
-      dpre = szX.Data'; % want channel x time
-      dt = t(2)-t(1);      
-      tfull = t(1):dt:t(end);
-      Tfull = length(tfull);
-      
-      if exist(filtered_filename,'file')
-        fprintf('Loading processed data...');
-        load(filtered_filename);
-        fprintf('Done!\n');
-      else
-        fprintf('Cannot find processed data.\n');        
-        fprintf('Filtering...');
-        szX.Onset = sz.Onset; szX.Offset = sz.Offset;
-        labels = str2cell(szX.Labels);
-        Fs = round(szX.SamplingRate);
-        fNQ = Fs/2;
-        d = dpre;
-        for i = 1:size(d,1), i, d(i,:) = preprocessing(dpre(i,:), data_type); end
-        save(filtered_filename,'-v7.3','d','t','labels');
-        fprintf('Done!\n');
       end
+      labels = str2cell(szX.Labels);
+      d = szX.Data;
+      d = zscore(d)'; % note: want channel x time 
       
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
+      dt = t(2)-t(1);     
+      tfull = t(1):dt:t(end); % time axis t may have clipped intervals
+      T = length(tfull);      
+%       T = size(d,2);
       N_channels = size(d,1);
-      T = size(d,2);
-%       dn = 0*d;
-      dn = zeros(N_channels,Tfull);
+      dn = zeros(N_channels,T);
       spikes = cell(1,N_channels);
       marks = cell(1,N_channels);
+      
       if ~exist('Fs','var'), Fs = round(1/(t(2)-t(1))); end
-      dW = round(.005*Fs); % how much shift to allow (# bins + or -)
       
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-        spkind = derivspike(d(n,:),d1thresh,d2thresh);
-        % post-process spkind to correspond to MINIMA over certain window
-        % a spike s gets placed on the interval [s-dW, s+dW]          
-        for i = 1:length(spkind)
-          i0 = spkind(i) - dW;
-          istart = max(1, spkind(i)-dW);
-          iend = min(spkind(i)+dW, T);
-          [~,shft] = min(dpre(n,istart:iend));
-          spkind(i) = istart + shft - 1;
-        end
-        spkind = unique(spkind);
-        % drop values 1 and 2 from spkind, if there
-        spkind(spkind==1)=[]; spkind(spkind==2)=[];        
+        spkind = spikefind(zscore(d(n,:)),zthresh,dT);    
         spikes{n} = t(spkind);
-        dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify 2nd arg "t" to be "full" time axis
-        d1 = zscore(diff(d(n,:))); d2 = zscore(diff(d1));
-        marks{n} = [dpre(n,spkind); d1(spkind-1); d2(spkind-2)];
+        dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify 2nd arg "t" to be "full" time axis        
+        marks{n} = [d(n,spkind)];
       end
 
       fprintf('Done!\nSaving spikes...');
@@ -103,98 +72,51 @@ function data = get_spikes(patient_name,seizure_name,data_type,d1thresh,d2thresh
       fprintf('Done!\n');
     end
        
-    % save point process object    
-%     data = pp_data(dn,t);
+    % save point process object 
     data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
     data.labels = labels;
     data.name = data_name;
     data.marks = marks;
     
-% %     % downsampling
-% %     switch data_type
-% %       case {'ECoG', 'EEG'}
-% %         fprintf('No downsampling.\n');
-% %       case 'LFP', 
-% %         fprintf('Trying to downsample by 32x\n');
-% %         try data = data.downsample(32); end;
-% %       case 'MUA'
-% %         fprintf('Need to figure out whether to downsample here\n');
-% %     end
-    
     fprintf('Saving point process data object...');
     save(pp_filename, '-v7.3','data');
     fprintf('Done!\n\n');
   end
-
-function d_post = preprocessing(d_pre, data_type)
-
-switch data_type 
-
-  %-------------------------- local field potential (LFP)
-  case 'LFP'
-%   fL = [0  59.5  60  fNQ]/fNQ;
-  fL = [0  55  60  fNQ]/fNQ;
-  zL = [1   1   0    0]/fNQ; % Lowpass
-  bL = firls(2000,fL,zL);
-  d_post = d_pre;
-  d_post = filtfilt(bL,1,d_post);
-  %-------------------------- local field potential (LFP)
-  
-  %--------------------------  multiunit activity (MUA)
-  case 'MUA'
-  fH = [0  0.5     1   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
-  fL = [0 2999.5  3000.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
-  bL = firls(2000,fH,zH);
-  bH = firls(2000,fL,zL);
-  d_post = d_pre;
-  d_post = filtfilt(bH,1,d_post);
-  d_post = filtfilt(bL,1,d_post);
-  %--------------------------  multiunit activity (MUA)
-  
-  %-------------------------- filtered ECoG
-  case 'ECoG'
-  fH = [0  0.5   1.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
-  fL = [1  119.5 120.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
-  fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
-  % fS2 = [0  119.0 119.5 120.5  121.0  fNQ]/fNQ; zS2 = [1  1  0  0  1 1]/fNQ; % Stop2
-  % fS3 = [0  179.0 179.5 180.5  181.0  fNQ]/fNQ; zS3 = [1  1  0  0  1 1]/fNQ; % Stop3
-  bL = firls(2000,fH,zH);
-  bH = firls(2000,fL,zL);
-  bS1 = firls(2000,fS1,zS1);
-  % bS2 = firls(2000,fS2,zS2);
-  % bS3 = firls(2000,fS3,zS3);
-
-  d_post = d_pre;
-  % d_post = d_post - nanmean(d_post);
-  d_post = filtfilt(bH,1,d_post);
-  d_post = filtfilt(bL,1,d_post);
-  d_post = filtfilt(bS1,1,d_post);
-  % d_post = filtfilt(bS2,1,d_post);
-  % d_post = filtfilt(bS3,1,d_post);s
-  %-------------------------- filtered ECoG
-
-  %-------------------------- filtered EEG
-  case 'EEG'
-  fH = [0  0.5   1.5   fNQ]/fNQ; zH = [0   0   1     1]/fNQ; % Highpass
-  fL = [1  119.5 120.5  fNQ]/fNQ; zL = [1   1   0    0]/fNQ; % Lowpass
-  fS1 = [0  59.0   59.5  60.5    61 fNQ]/fNQ; zS1 = [1 1  0  0  1  1]/fNQ;  % Stop1
-  % fS2 = [0  119.0 119.5 120.5  121.0  fNQ]/fNQ; zS2 = [1  1  0  0  1 1]/fNQ; % Stop2
-  % fS3 = [0  179.0 179.5 180.5  181.0  fNQ]/fNQ; zS3 = [1  1  0  0  1 1]/fNQ; % Stop3
-  bL = firls(2000,fH,zH);
-  bH = firls(2000,fL,zL); 
-  bS1 = firls(2000,fS1,zS1);
-  % bS2 = firls(2000,fS2,zS2);
-  % bS3 = firls(2000,fS3,zS3);
-
-  d_post = d_pre;
-  % d_post = d_post - nanmean(d_post);
-  d_post = filtfilt(bH,1,d_post);
-  d_post = filtfilt(bL,1,d_post);
-  d_post = filtfilt(bS1,1,d_post);
-  % d_post = filtfilt(bS2,1,d_post);
-  % d_post = filtfilt(bS3,1,d_post);s
-  %-------------------------- filtered EEG
 end
-%   d_post = zscore(d_post);
+
+function spikes = spikefind(x,thresh,dT)
+% spikes = spikefind(x,thresh,dT)
+%
+% spikefind.m: find "spikes" (steep extrema) of a given signal x
+% x: input data
+% thresh: "steepness" threshold (where steepness = product of derivatives)
+% dT: time window on each side (number of time bins)
+% spikes: indices (in x) where spikes occur
+%
+% sample values, e.g.
+% dT = round(0.03*dt);
+% thresh = -0.04;
+
+% might want to zscore x & adjust thresh, if x has large amplitudes
+% if range(x)>1e2, x = zscore(x); end
+
+T = length(x);
+spikes=[];
+
+t=dT+1;
+while t<=T-dT
+  t1 = t-dT;
+  t2 = t+dT;
+  dx1=x(t)-x(t1);
+  dx2=x(t2)-x(t);
+  if dx1*dx2<thresh && dx1<dx2    
+    [~,ti] = min(x(t1:t2)); % find local min on [t1,t2]
+    t0 = t1-1+ti; % index shifted from [t1,t2] to [1,T]
+    spikes=[spikes t0];
+    t=t2+dT;
+  else
+    t=t+1;
+  end
 end
+
 end
