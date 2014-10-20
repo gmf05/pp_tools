@@ -54,18 +54,20 @@
   methods
     % Constructor  
 %     function obj = pp_model(b,W,X,y,C,link)
-    function obj = pp_model(name,b,W,X,y,C,link)      
+    function obj = pp_model(name,b,W,X,y,C,link)
       obj.rs = 'exp';
-      if nargin>1
+      if nargin>0
         obj.name = name;
-        obj.b = b;
-        obj.W = W;
-        if nargin>3
-          obj.X = X;
-          obj.y = y;
-          obj.CIF = C;
-          obj.link = link;
-          obj = obj.calcGOF();
+        if nargin>1        
+          obj.b = b;
+          obj.W = W;
+          if nargin>3
+            obj.X = X;
+            obj.y = y;
+            obj.CIF = C;
+            obj.link = link;
+            obj = obj.calcGOF();
+          end
         end
       end
     end
