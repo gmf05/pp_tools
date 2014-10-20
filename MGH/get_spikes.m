@@ -16,8 +16,6 @@ function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
       load(spikes_filename);      
       fprintf('Done!\n');
       
-      dt = t(2)-t(1);
-      tfull = t(1):dt:t(end); % NOTE: needed to switch axis from t to tfull here
       N_channels = length(spikes);
       dn = zeros(N_channels,length(tfull));
       for n = 1:N_channels
@@ -48,9 +46,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
       dt = t(2)-t(1);     
-      tfull = t(1):dt:t(end); % time axis t may have clipped intervals
-      T = length(tfull);      
-%       T = size(d,2);
+      tfull = t(1):dt:t(end); % starting time axis t may have clipped intervals
+      T = length(tfull); % here we swap "t" for the "full" time axis
       N_channels = size(d,1);
       dn = zeros(N_channels,T);
       spikes = cell(1,N_channels);
@@ -63,17 +60,17 @@ function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
         spkind = spikefind(zscore(d(n,:)),zthresh,dT);    
         spikes{n} = t(spkind);
-        dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify 2nd arg "t" to be "full" time axis        
+        dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify "t" to be "full" time axis        
         marks{n} = [d(n,spkind)];
       end
 
       fprintf('Done!\nSaving spikes...');
-      save(spikes_filename,'-v7.3','spikes','marks','labels','t');
+      save(spikes_filename,'-v7.3','spikes','marks','labels','tfull');
       fprintf('Done!\n');
     end
        
     % save point process object 
-    data = pp_data(dn,t,'name',data_name,'labels',labels,'marks',marks);
+    data = pp_data(dn,tfull,'name',data_name,'labels',labels,'marks',marks);
     data.labels = labels;
     data.name = data_name;
     data.marks = marks;

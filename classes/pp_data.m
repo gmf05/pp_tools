@@ -218,19 +218,25 @@ classdef pp_data
             ind = find(obj.dn(i,:));
             plot(obj.t(ind), i*ones(1,length(ind)), [PLOT_COLOR '.']);
           end
-          
-          % old plotting routine
-          %
-% %           for i = 1:obj.N_channels
-% %             ind = find(obj.dn(i,:));
-% %             for k = 1:length(ind)
-% %               plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR);
-% %             end
-% %           end
-          
           xlabel('time [s]');
           ylabel('channel');
           title([ttl ' raster plot']);
+        case 'raster2'
+          gca(); hold on;
+          % old plotting routine: connected spike trains but SLOW
+          % -- OK if only a few channels / small time interval
+          for i = 1:obj.N_channels
+            ind = find(obj.dn(i,:));
+            for k = 1:length(ind)
+              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR);
+            end
+          end
+
+          xlabel('time [s]');
+          ylabel('channel');
+          title([ttl ' raster plot']);
+          
+          
           
         case 'raster-marks'
           j=3; % row of mark process

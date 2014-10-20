@@ -169,6 +169,19 @@ classdef pp_params
     Xs(end, N-1:N+2) = [1 1 1 1] * s_coeff; % alpha = 1
   end
   
+  function obj = set_covar_channels(obj,newchans)
+    switch class(newchans)
+      case 'double'
+        for i = 1:length(newchans)
+          obj.covariate_channels{i}=newchans(i);
+        end
+      case 'cell'
+        for i = 1:length(newchans)
+          obj.covariate_channels{i}=newchans{i};
+        end
+    end
+  end
+  
   end
   
 end

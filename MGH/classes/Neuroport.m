@@ -69,6 +69,22 @@ classdef Neuroport
       Nbors = [cup,cdown,cleft,cright];      
     end
     
+    function Nbors = neighbors2(obj,i)
+      try
+        cup = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)+1);
+        cdown = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)-1);
+        cleft = obj.arrayMap(obj.coord(i,1)-1,obj.coord(i,2));
+        cright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2));
+        cupright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2)+1);
+        cdownright = obj.arrayMap(obj.coord(i,1)+1,obj.coord(i,2)-1);
+        cupleft = obj.arrayMap(obj.coord(i,1)-1,obj.coord(i,2)+1);
+        cdownleft = obj.arrayMap(obj.coord(i,1)-1,obj.coord(i,2)-1);
+      catch 
+        error('One (or more neighbors) do not exist');
+      end
+      Nbors = [cup,cdown,cleft,cright,cupright,cdownright,cupleft,cdownleft];      
+    end
+    
     function blank(obj)
     R = 0.5;
     % plot a blank 2d-array
@@ -144,7 +160,7 @@ classdef Neuroport
       
       axis off, box off      
       title(['time = ' num2str(taxis(t))]);      
-      mov(t) = getframe;
+      mov(t) = getframe();  
       pause(0.02);
       if t<T, hold off; cla; end
     end

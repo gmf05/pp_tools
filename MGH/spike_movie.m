@@ -1,126 +1,60 @@
-patient_name = 'MG49';
-seizure_name = 'Seizure36';
+%% get data
+% data parameters
+patient_name = 'MG49'; seizure_name = 'Seizure45';
+% patient_name = 'MG63'; seizure_name = 'Seizure3';
 data_type = 'LFP';
-thresh = 1;
+zthresh = -0.1; dT = 6000;
+zthresh = -0.1; dT = 6000;
 N = Neuroport(patient_name);
-data_name = [DATA '/' patient_name '/' patient_name '_' seizure_name '_' data_type];
-load([data_name '_filtered']); d_post = d'; time = t;
 
-doSave = false;
-if doSave
-  VW = VideoWriter([patient_name '_' seizure_nam '_new1.avi']);
-  VW.open();
-end
+% get raw voltage data
+load([DATA '/' patient_name '/' patient_name '_' seizure_name '_LFP_ECoG_EEG.mat']);
+dsz = sz.LFP.Data';
+tsz = sz.LFP.Time;
+
+d = get_spikes(patient_name,seizure_name,data_type,zthresh,dT); % spike data
+
+%% plot each spike sweep
+close all, figure();
+dsFactor = 32;
+
+% % ~78.2: sentinel spike?
+% % tmin = 78;
+% % tmax = 79;
+
+% % 750 - 760 ? this is the interval from omar's movie
+% % what does this correspond to rel. to seizure onset??
+% % answer: t = ~102.5 in seizure 36
+% % sz 36 = [647.5855, 809.6055]
+% %
+% tmin = 102.4;
+% tmax = 104;
+
+tmin = 121; tmax = 122;
+
+% tmin = 80.2; tmax = 80.8; % mg 63
+
+% voltage data
+ti1 = getclosest(tsz,tmin);
+ti2 = getclosest(tsz,tmax);
+dnorm = -normalize(dsz(:,ti1:ti2));
+% dnorm = -zscore(dsz(:,ti1:ti2)')';
+
+dsFactor2 = 1;
+dsFactor3 = dsFactor*dsFactor2;
+d0 = d.sub_time(tmin,tmax); % spike data
+d0 = d0.downsample(dsFactor);
+d0
+d0.t(1)
+d0.t(end)
+1/d0.dt
+% dn0 = cumdownsample(d0.dn,dsFactor2);
+
+mov = N.plot(dnorm(:,1:dsFactor:end),[],d0.t,d0.dn);
+% mov = N.plot(dnorm(:,1:dsFactor3:end),[-4 4],d0.t);
+% mytitle = 'mg49-s45-115-116.gif';
+mytitle = [patient_name '-' seizure_name '-' num2str(tmin) '-' num2str(tmax) '.gif'];
+movie2gif(mov, mytitle, 'LoopCount', 0, 'DelayTime', 0);
 
 
-%%
-tmin = 105; tmax = 110;
-% tmin = 115; tmax = 125;
-% tmin = 120; tmax = 122;
-% tmin = 120; tmax = 125;
-% tmin = 80; tmax = 90;
 
-min_refract = 0.3*3e4;
-trange = getclosest(time,tmin):getclosest(time,tmax);
-time_W = time(trange);
-Ws = d_post(trange,:)';
-T = size(Ws,2);
-amps = cell(1,N.N_electrodes);
-spike_dn = zeros(N.N_electrodes,T);
-for n = 1:N.N_electrodes
-% for n = [1 10 20]
-  [ind,amp] = hilbertspike(Ws(n,:),thresh,1);
-% % % only keep big spikes
-%   [sortAmp,sortI] = sort(amp);
-%   dropI = [];
-%   for j = 2:length(amp)
-%     if min(abs(ind(sortI(1:j-1)) - ind(sortI(j)))) < min_refract
-%       dropI = [dropI sortI(j)];
-%     end
-%   end
-%   ind(dropI) = [];
-
-  spike_dn(n,ind) = 1;
-%   amps{n} = amp;
-end
-
-% d = pp_data(spike_dn,time_W);
-
-%%
-
-figure
-for n = 1:N.N_electrodes  
-  plot(time_W,Ws(n,:)); hold on
-  plot(time_W(ind),Ws(n,find(spike_dn(n,:))),'rx');
-  pause; clf;
-end
-
-%%
-% mn = min(min(Ws));
-% mx = max(max(Ws));
-% cax = [mn mx];
-% cax = [-4 4];
-% cax = [4 -6];
-cax = [2 -4];
-C = cax(2)-cax(1);
-R = 0.5;
-theta = 0:0.01:2*pi;
-
-%  figure('units','normalized','position',[0 0 1 1]);
-clf, set(gcf,'units','normalized','position',[0 0 1 1]);
-set(gca,'XTick',[]);
-set(gca,'YTick',[]);
-colormap('default'), color_RGB = colormap();
-
-% tmn = 105; tmx = 110;
-tmn = time_W(1); tmx = time_W(end);
-% response_list = [33, 42, 84];
-response_list = [1 10 20];
-% response_list = [41 76 82];
-for i = 1:3
-  r = response_list(i);
-  subplot(3,2,2*i); plot(time_W,Ws(r,:));
-  spike_ind = find(spike_dn(r,:));
-  hold on, plot(time_W(spike_ind), Ws(r,spike_ind),'rx');  xlim([tmn,tmx]); ylim([-8,8]);
-end
-
-dW = 1;
-dT = 30;
-for t = dT+1:dT:T
-  subplot(1,2,1)
-  for n = 1:N.N_electrodes
-    x = N.coord(n,1);
-    y = N.coord(n,2);
-    col_ind = round((Ws(n,t)-cax(1))/C*63)+1;
-    col_ind = min(col_ind,64); col_ind = max(col_ind,1);
-    col = color_RGB(col_ind,:);
-    fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
-%     text(x,y,num2str(n),'fontsize',22);
-  end
-  
-  for r = response_list, text(N.coord(r,1),N.coord(r,2),num2str(r),'fontsize',20); end;
-  
-  spike_cells = find(sum(spike_dn(:,t-dT:t)'));
-  if ~isempty(spike_cells)
-    for n = spike_cells, fill(N.coord(n,1)+R/2*cos(theta),N.coord(n,2)+R/2*sin(theta),'w'); end
-  end
-  
-  axis xy;
-  
-  subplot(3,2,2), hold on; time_bar = plot(time_W(t)*ones(1,2),[-8,8],'r','LineWidth',2);
-
-  subplot(1,2,1);
-  title(num2str(time_W(t)));
-  pause(0.005);
-  hold off;
-  
-  if doSave
-    VW.writeVideo(getframe(gcf));
-  end
-  delete(time_bar)
-end
-
-if doSave
-  close(gcf)
-  VW.close();
-end
