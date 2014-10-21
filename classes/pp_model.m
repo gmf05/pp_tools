@@ -307,9 +307,15 @@
 
       % time rescaling & KS test (NOTE: Should only be for poisson
       % regression)
-      [ks_stat,ks_ci,z,ks_p] = KStest(obj.y,obj.CIF);
-      obj.rsISI = z;
+      obj = obj.rescaled_ISI(); % compute rescaled ISI, add to object properties
+      [ks_stat,ks_ci,~,ks_p] = KStest(obj.y,obj.CIF); 
+      [ks_stat,ks_ci,ks_p]
+%       obj.KS = [ks_stat,ks_ci,ks_p];    
+      testx = 0:0.01:1; testcdf = unifcdf(testx,0,1); matcdf = [testx' testcdf'];
+      [~,ks_p,ks_stat,ks_ci] = kstest(z,'CDF',matcdf,'Alpha',0.05);
       obj.KS = [ks_stat,ks_ci,ks_p];      
+      [ks_stat,ks_ci,ks_p]
+      
     end
     
     function obj = diff(obj,obj2)
@@ -831,7 +837,7 @@
       % Z = 1.63;
       Z = 1.36;
       %   calculate ks statistic, confidence bounds
-      numISIs = length(obj.rsISI);      
+      numISIs = length(obj.rsISI);    
       if numISIs>2
         [eCDF,xCDF] = ecdf(sort(obj.rsISI));
         switch obj.rs
@@ -925,6 +931,31 @@
       title('autocorrelation');
       xlabel('lags');
     end
+    
+    function obj = rescaled_ISI(obj)
+      
+      spike_ind = [0; find(obj.y)];
+      numISIs = length(spike_ind)-1;
+
+      if numISIs<3
+        error('Too few data points');
+      end
+
+      z = zeros(1, numISIs);
+      for j=1:numISIs                           
+        z(j) = sum(obj.CIF(spike_ind(j)+1:spike_ind(j+1)));
+      end
+
+      switch obj.rs
+        case 'exp'
+          z = 1-exp(-z);
+        case 'identity'
+          []; % do nothing
+      end
+      
+      obj.rsISI = z;
+    end
+    
   end
-end
-       
+  
+  end

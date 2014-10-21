@@ -1,14 +1,15 @@
-function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
+function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT,thresh2)
   
   global DATA; % path to data 
-  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(-zthresh) '_' num2str(dT)]; % note -zthresh
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(zthresh) ',' num2str(dT)];
+  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(thresh1) '_' num2str(dT) '_' num2str(thresh2)];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh1) ',' num2str(dT) ',' num2str(thresh2)];
   pp_filename = [DATA '/' patient_name '/' data_name '_pp.mat'];
   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
   
   if exist(pp_filename,'file')
-    fprintf(['Loaded ' data_name0 '\n']);
+    fprintf(['Loading ' data_name0 '...']);
     load(pp_filename)
+    fprintf('Done!\n');
   else
     if exist(spikes_filename, 'file')
       fprintf(['Cannot find point process object for ' data_name0 '\n']);
@@ -40,8 +41,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
           t = sz.LFP.Time;
       end
       labels = str2cell(szX.Labels);
-      d = szX.Data;
-      d = zscore(d)'; % note: want channel x time 
+      d = szX.Data';
+%       d = zscore(d')'; % note: want channel x time 
       
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
@@ -58,7 +59,9 @@ function data = get_spikes(patient_name,seizure_name,data_type,zthresh,dT)
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-        spkind = spikefind(zscore(d(n,:)),zthresh,dT);    
+%         spkind = spikefind(zscore(d(n,:)),thresh,dT);
+%         spkind = spikefind2(-d(n,:),thresh,dT);
+        spkind = spikefind2(-d(n,:),thresh1,dT,thresh2);
         spikes{n} = t(spkind);
         dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify "t" to be "full" time axis        
         marks{n} = [d(n,spkind)];
