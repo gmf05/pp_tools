@@ -24,6 +24,7 @@ classdef pp_data
     N_channels % number of channels (rows)
     t % time axis
     dt % time resolution
+    Fs % sampling frequency (sometimes easier than dt)
     T % number of time points
   end
 
@@ -37,7 +38,8 @@ classdef pp_data
       if nargin<2, obj.t = 1:obj.T;
       else obj.t = t; end
       obj.dt = obj.t(2) - obj.t(1);
-      
+      obj.Fs = 1/obj.dt;
+     
       %
       % TO DO: parse varargin for auxillary data: marks, labels, etc
       %
@@ -173,6 +175,7 @@ classdef pp_data
           ylabel('no. channels')
           title({ttl ; ' - no. channels active per dt'}); grid on;
         case 'heat'
+          Ts = obj.t(1:dW_bins:end-win_bins);
           win_rates = zeros(obj.N_channels, N_windows);
           for i = 1:obj.N_channels
             count = 1;
@@ -187,10 +190,19 @@ classdef pp_data
           colorbar;
           title({ttl; 'firing rates'});
         case 'isi'
+          isi_axis = 1:50:2000;
+          isi_list=[];
+          for n = 1:obj.N_channels, isi_list=[isi_list round(diff(find(obj.dn(n,:)))*obj.dt*1e3)]; end
+          [isi_hist,isi_x] = hist(isi_list,isi_axis);
+          bar(isi_x,isi_hist);
+          xlabel('ISI [ms]');
+          ylabel('count');
+        case 'isi-heat'
           if obj.dt>5e-4
             isi_axis = 1:10:ceil(1/obj.dt);
           else
-            isi_axis = 1:100:ceil(.5/obj.dt);
+            isi_axis = 1:100:ceil(1/obj.dt);
+%             isi_axis = 1:100:ceil(2/obj.dt);
           end
           isi_hist = zeros(length(isi_axis),N_windows);
           count = 1;
@@ -261,7 +273,6 @@ classdef pp_data
           xlabel('time [s]');
           ylabel('channel');
           title([ttl ' raster plot']);
-          
       end
     end
     
@@ -401,8 +412,8 @@ classdef pp_data
     function intvls = spike_trigger(obj,thresh,lockout)
       % set parameters
 %       dL = 0.05; dR = 0.2; % [sec]
-      dL = 0.005; dR = 0.2; % [sec]
-%       dL = 0; dR = 0; % [sec]
+%       dL = 0; dR = 1; % [sec]
+      dL = 0; dR = 0; % [sec]
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
 
       % get array of spike indices, channels
@@ -428,11 +439,85 @@ classdef pp_data
 
         if Nchans>=thresh
           iend = spkInfo(spk2,1);
-          intvls = [intvls; istart-dLbins iend+dRbins];
+          intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)];
         end
 
         spk1 = spk2+1;
       end
+    end
+    
+    function intvls = spike_trigger2(obj,thresh,max_size)
+      dL = 0; dR = 0; % [sec]
+      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+      % get array of spike indices, channels
+      spkInfo = obj.raster_ind();
+      Nspks = size(spkInfo,1);
+
+      % iterate over spikes, finding windows where enough
+      % channels spike
+      intvls = [];
+      spk1=1;
+      while spk1 < Nspks
+        istart = spkInfo(spk1,1);
+        % find last spike before lockout period & channel repeat
+        spk2 = spk1+1;
+        Nchans = length(unique(spkInfo(spk1:spk2,2)));
+        while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
+          spk2 = spk2+1;
+          chans = spkInfo(spk1:spk2,2);
+          uchans = unique(chans);    
+          Nchans = length(uchans);
+        end
+        spk2 = spk2-1;
+
+        if Nchans>=thresh
+          iend = spkInfo(spk2,1);
+          intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)];
+        end
+
+        spk1 = spk2+1;
+      end
+      
+    end
+    
+    function intvls = spike_trigger3(obj,thresh,min_isi)
+      dL = 0; dR = 0; % [sec]
+      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+      % get array of spike indices, channels
+      spkInfo = obj.raster_ind();
+      Nspks = size(spkInfo,1);
+
+      % iterate over spikes, finding windows where enough
+      % channels spike
+      intvls = [];
+      spk1=1;
+      
+      %
+      % find all instances where > thresh channels spike
+      % -> to find termination, keep going through time until 
+      % a channel repeat spikes OR until there is an isi >= min_isi
+      %
+% % %       while spk1 < Nspks
+% % %         istart = spkInfo(spk1,1);
+% % %         % find last spike before lockout period & channel repeat
+% % %         spk2 = spk1+1;
+% % %         Nchans = length(unique(spkInfo(spk1:spk2,2)));
+% % %         while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
+% % %           spk2 = spk2+1;
+% % %           chans = spkInfo(spk1:spk2,2);
+% % %           uchans = unique(chans);    
+% % %           Nchans = length(uchans);
+% % %         end
+% % %         spk2 = spk2-1;
+% % % 
+% % %         if Nchans>=thresh
+% % %           iend = spkInfo(spk2,1);
+% % %           intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)];
+% % %         end
+% % % 
+% % %         spk1 = spk2+1;
+% % %       end
+      
     end
     
     function mov = spike_trigger_plot(obj,intvls)

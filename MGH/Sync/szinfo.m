@@ -25,8 +25,6 @@ EDFPATH = fullfile(sharedPath, patient, [patient '_edfs']);
 MAPPATH = fullfile(sharedPath, patient, [patient '_Notes_Images']);
 LFPPATH = fullfile(sharedPath, patient, [patient '_Neuroport']); %#ok<NASGU>
 
-% get_gmf_env; SZSHAREDPATH = DATA_DIR;
-% ecogSyncCh = 1; lfpSyncCh = 97;
 eval(['run ''' patientDataFile '''']);
 if nargin == 3
     szNames = {dCell.Seizure};

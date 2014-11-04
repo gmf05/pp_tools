@@ -1,8 +1,11 @@
-function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT,thresh2)
+function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT1,thresh2,dT2)
   
-  global DATA; % path to data 
-  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(thresh1) '_' num2str(dT) '_' num2str(thresh2)];
-  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh1) ',' num2str(dT) ',' num2str(thresh2)];
+  if nargin<6, thresh2=thresh1; dT2=dT1; end
+  
+  global DATA; % path to data
+  data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(thresh1) '_' num2str(dT1) '_' num2str(thresh2)];
+%   data_name = [patient_name '_' seizure_name '_' data_type '_' num2str(thresh1) '_' num2str(dT1) '_' num2str(thresh2) '_' num2str(dT2)];
+  data_name0 = [patient_name ' ' seizure_name ' ' data_type ' @ thresh=' num2str(thresh1) ',' num2str(dT1) ',' num2str(thresh2) ',' num2str(dT2)];
   pp_filename = [DATA '/' patient_name '/' data_name '_pp.mat'];
   spikes_filename = [DATA '/' patient_name '/' data_name '_spikes.mat'];
   
@@ -41,8 +44,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT,thresh
           t = sz.LFP.Time;
       end
       labels = str2cell(szX.Labels);
-      d = szX.Data';
-%       d = zscore(d')'; % note: want channel x time 
+      d = szX.Data'; % note: want channel x time 
+%       d = zscore(d')'; % note: zscore expects time x channel
       
       % get and save spikes, create raster      
       fprintf('Finding spikes...\n');
@@ -59,9 +62,8 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT,thresh
       % loop over channels, finding spike indices for each
       for n = 1:N_channels
         if mod(n,10)==1, fprintf(['Channel #' num2str(n) '\n']); end
-%         spkind = spikefind(zscore(d(n,:)),thresh,dT);
-%         spkind = spikefind2(-d(n,:),thresh,dT);
-        spkind = spikefind2(-d(n,:),thresh1,dT,thresh2);
+        spkind = spikefindA(-zscore(d(n,:)),thresh1,dT1,thresh2);
+%         spkind = spikefindB(-zscore(d(n,:)),thresh1,dT1,thresh2,dT2);
         spikes{n} = t(spkind);
         dn(n,:) = hist(spikes{n},tfull); % NOTE!!!: needed to modify "t" to be "full" time axis        
         marks{n} = [d(n,spkind)];
@@ -84,38 +86,48 @@ function data = get_spikes(patient_name,seizure_name,data_type,thresh1,dT,thresh
   end
 end
 
-function spikes = spikefind(x,thresh,dT)
-% spikes = spikefind(x,thresh,dT)
-%
-% spikefind.m: find "spikes" (steep extrema) of a given signal x
-% x: input data
-% thresh: "steepness" threshold (where steepness = product of derivatives)
-% dT: time window on each side (number of time bins)
-% spikes: indices (in x) where spikes occur
-%
-% sample values, e.g.
-% dT = round(0.03*dt);
-% thresh = -0.04;
-
-% might want to zscore x & adjust thresh, if x has large amplitudes
-% if range(x)>1e2, x = zscore(x); end
-
-T = length(x);
+function spikes = spikefindA(x,thresh1,dT,thresh2)
 spikes=[];
 
-t=dT+1;
-while t<=T-dT
-  t1 = t-dT;
-  t2 = t+dT;
-  dx1=x(t)-x(t1);
-  dx2=x(t2)-x(t);
-  if dx1*dx2<thresh && dx1<dx2    
-    [~,ti] = min(x(t1:t2)); % find local min on [t1,t2]
-    t0 = t1-1+ti; % index shifted from [t1,t2] to [1,T]
-    spikes=[spikes t0];
-    t=t2+dT;
+ind = find(x>thresh1);
+di = diff(ind);
+jumps = [0 find(di>1)];
+if length(jumps)==1, return, end
+tOn = ind(jumps+1); tOn=tOn(1:end-1);
+tOff = ind(jumps(2:end));
+
+for j = 1:length(tOn);
+  if tOff(j)-tOn(j)>dT
+    [~,j0] = max(x(tOn(j):tOff(j)));
+    j1 = tOn(j)+j0-1;
+    if x(j1)>=thresh2
+      spikes = [spikes tOn(j)+j0-1];
+    end
+  end
+end
+
+end
+
+
+function spikes = spikefindB(x,thresh1,dT1,thresh2,dT2)
+spikes=[];
+T = length(x);
+T0 = T-dT2;
+t=dT1+1;
+
+% time loop:
+% march through time steps and check whether
+% left-hand-slope > thresh1 & right-hand slope < thresh2 
+% if so, local max is the spike
+while t<T0  
+  if x(t)-x(t-dT1)>=thresh1 & x(t)-x(t+dT2)>=thresh2
+    % find local max:
+    [~,t0] = max(x(t-dT1:t+dT2));
+    t1 = t-dT1-1+t0;
+    spikes = [spikes t1];
+    t=t+dT2;
   else
-    t=t+1;
+    t=t+1; % no spike
   end
 end
 

@@ -147,6 +147,11 @@ classdef pp_params
         end
         N_windows = length(tmins);
     end   
+    
+    function [win_bins,dW_bins] = window_bins(obj,Fs)
+      win_bins = round(obj.window(1)*Fs);
+      dW_bins = round(obj.window(2)*Fs);
+    end
   
   function Xs = splineX(obj,ind)
     s = obj.s;

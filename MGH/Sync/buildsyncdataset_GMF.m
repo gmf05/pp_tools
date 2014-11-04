@@ -36,29 +36,25 @@ ecogSzOff = min([round((info.EndTime + offset) * ecogFs), size(ecogRef,1)]);
 ecogRef = ecogRef(ecogSzOn:ecogSzOff);
 
 tic
-OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 d = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpSyncCh) ':' num2str(lfpSyncCh)], 'precision', 'double');
 lfpRef = d.Data';
 lfpFs = d.MetaTags.SamplingFreq;
 lfpMaxIdx = length(lfpRef);
 fprintf('Reference elec. loaded\n');
-cd(OLD_DIR);
 toc
   
 % Load only the ecogCh ECoG channels (there are also EEG data)
 tic
 [dECoG, ecogProp] = openEDF(info.ECoG.EdfFile, ecogCh);
 dECoG = dECoG(ecogSzOn : ecogSzOff, :);
-ecogRef = ecogRef(ecogSzOn : ecogSzOff);
 fclose(ecogProp.FILE.FID);
 fprintf('ECoG loaded\n');
 toc
 
 % Do LFP/ECoG syncing:
 tic
-% lfpFs, lfpFs = 3e4;
-[ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp_GMF(ecogRef, ecogFs, lfpRef, lfpFs);
+[ecogIdx, lfpIdx, ecogRealFs] = syncecoglfp(ecogRef, ecogFs, lfpRef, lfpFs);
 
 % find beginning of lfp time by working backwards from first sync in ecog
 tECoG = (0:ecogSzOff-ecogSzOn)/ecogFs - onset;
@@ -67,49 +63,45 @@ tmn = lfpIdx(1)/lfpFs - tECoG(ecogIdx(1)); % find when tECoG = 0 occurs in lfp t
 lfpSzOn = max([1, round((tmn - onset) * lfpFs)]);
 lfpSzOff = min([round((tmn+info.EndTime-info.StartTime + offset) * lfpFs), lfpMaxIdx]);
 tLFP = (0:lfpSzOff-lfpSzOn)/lfpFs - onset;
+lfpIdx0 = lfpIdx - lfpSzOn;
+% keep unshifted time axes, e.g. for comparison:
+% tECoG0=tECoG;
+% tLFP0=tLFP;
 
-% PATIENT MG49:
-% for each sync event, skip ahead ~500 bins in tLFP (~18 ms) to match tECoG
-%   (31.656 sec per sync in LFP vs. 31.674 per sync in ECoG)
-
-ecogIdx0 = [1; ecogIdx];
-lfpIdx0 = [1; lfpIdx - lfpSzOn];
-count = 1;
-lfp_t_ind = [];
-
-% list of duratons observed in each device
+% list of duratons observed in each device:
+% dts = change in time [sec]
+% dti = change in time [indices]
+% differences in these durations tell us how much to adjust
+% the time axes
 dti_lfp = diff(lfpIdx0);
 dts_lfp = dti_lfp/lfpFs;
-dti_ecog = diff(ecogIdx0);
+dti_ecog = diff(ecogIdx);
 dts_ecog = dti_ecog/ecogFs;
-% differences in the durations tell us how much to adjust
-% the time axes
-dts_diff = diff([dts_lfp dts_ecog]');
 
-for i = 1 : length(ecogIdx0)-1
-%     dt_ecog = tECoG(ecogIdx0(i+1))-tECoG(ecogIdx0(i));
-%     dt_lfp = tLFP(lfpIdx0(i+1))-tLFP(lfpIdx0(i));
-%     
-%     % compute time difference (in # of bins)
-%     dt_diff = abs(dt_ecog - dt_lfp);
-%     dt_diff_bins = round(dt_diff * lfpFs);    
-%     
-%     % clip given # of bins from LFP time axis
-%     dt_i = round(min(dt_lfp,dt_ecog)*lfpFs);
-%     lfp_t_ind = [lfp_t_ind, count : count + dt_i - 1];
-%     count = count + dt_i + dt_diff_bins;
-    
-    dt_diff_bins = round(abs(dts_diff(i))*lfpFs);
-    dt_i = dti_lfp(i) - dt_diff_bins;
-    lfp_t_ind = [lfp_t_ind, count:count+dt_i];
-    count = count+dti_lfp(i);
+% at each sync point, jump time ahead with a shift
+count_ecog = 0;
+count_lfp = 0;
+for j = 1:length(dts_lfp)
+  disp(['Sync point ' num2str(j)]);
+  count_ecog = count_ecog+dti_ecog(j);
+  count_lfp = count_lfp+dti_lfp(j);
+  shift_j = abs(dts_lfp(j)-dts_ecog(j));
+  
+  % decide which time axis to shift
+  if dts_lfp(j)>dts_ecog(j)
+    disp(['ECoG is behind ' num2str(shift_j) ]);
+    tECoG(count_ecog:end) = tECoG(count_ecog:end) + shift_j;
+  else
+    disp(['LFP is behind ' num2str(shift_j)]);
+    tLFP(count_lfp:end) = tLFP(count_lfp:end) + shift_j;    
+  end
 end
-lfp_t_ind = [lfp_t_ind count:lfpSzOff-lfpSzOn];
-
-% trim time axis
-tLFP = tLFP(lfp_t_ind);
-fprintf('Synchronized indexing found\n');
 toc
+% ecogRef0=normalize(ecogRef);
+% lfpRef0=normalize(lfpRef(lfpSzOn:lfpSzOff));
+% save ~/testSync3.mat -v7.3 patient seizure tLFP tECoG tLFP0 tECoG0 lfpRef0 ecogRef0 lfpSzOn lfpSzOff
+% save ~/testSync6.mat -v7.3 patient seizure tLFP tECoG tLFP0 tECoG0 lfpRef0 ecogRef0 lfpSzOn lfpSzOff
+% 0;
 
 % Load EEG (if it exists)
 if isfield(info, 'EEG')
@@ -129,18 +121,15 @@ end
 
 % Now get the original LFP data
 tic
-OLD_DIR = pwd(); cd([dataPath '/' patient '/' patient '_Neuroport']);
 lfpProp = NSX_open(info.LFP.Ns5File);
 dLFP = openNSx('read', info.LFP.Ns5File, ['c:' num2str(lfpCh(1)) ':' num2str(lfpCh(end))], ...
                 ['t:' num2str(lfpSzOn)  ':' num2str(lfpSzOff)], 'precision', 'double');
-dLFP = dLFP.Data';                                     
+dLFP = dLFP.Data';                      
 fprintf('LFP loaded\n');
-cd(OLD_DIR);
 toc
 
-% clip LFP to window of interest
-dLFP = dLFP(lfp_t_ind,:);
-fprintf('LFP clipped -> sync with ECoG\n');
+% If there's a size mismatch, drop a time point
+if length(tLFP)==size(dLFP,2)+1, tLFP(end)=[]; end
 
 % Create structures with synced data and its meta-data
 ecog = struct('Name', 'ecog', 'File', ecogProp.FileName, 'SamplingRate', ecogFs, ...
@@ -169,7 +158,7 @@ if isfield(info, 'EEG')
 end
 
 % Create structure with syncing information
-syncCheck = struct('ecogRef', ecogRef, 'lfpRef', lfpRef, 'ecogIdx', ecogIdx, 'lfpIdx', lfpIdx, 'lfpSzOn', lfpSzOn, 'lfpSzOff', lfpSzOff, 'lfpSzIdx', lfp_t_ind);
+syncCheck = struct('ecogRef', ecogRef, 'lfpRef', lfpRef, 'ecogIdx', ecogIdx, 'lfpIdx', lfpIdx0, 'lfpSzOn', lfpSzOn, 'lfpSzOff', lfpSzOff);
 sz.sync = syncCheck;
 
 % Save data
@@ -179,8 +168,5 @@ fprintf('Saving...');
 save(['~/' patient '_' seizure '_LFP_ECoG_EEG.mat'], '-v7.3', 'sz');
 fprintf('done.\n');
 toc
-
-% Plot the syncing results.
-% plot(tLFP,lfpRef/max(lfpRef),'b',tECoG,ecogRef,'r');
 
 end

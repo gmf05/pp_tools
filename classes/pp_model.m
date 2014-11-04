@@ -6,7 +6,7 @@
 %     W % covariance matrix
 %     X % design (data) matrix
 %     y % response process
-%     CIF % conditional intensity function 
+%     CIF % conditional intensity function
 %     fit_method % glmfit, filt, or smooth
 %     link % link function name, if using glmfit 
 %     stats % structure like the one returned by glmfit
@@ -119,7 +119,6 @@
 
       % custom glmfit routine:
       [b,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
-
       switch obj.fit_method
         case 'glmfit'
           obj.b = b;
@@ -309,12 +308,14 @@
       % regression)
       obj = obj.rescaled_ISI(); % compute rescaled ISI, add to object properties
       [ks_stat,ks_ci,~,ks_p] = KStest(obj.y,obj.CIF); 
-      [ks_stat,ks_ci,ks_p]
+%       [ks_stat,ks_ci,ks_p] % uncomment to check internal KStest against
+%       stat toolbox's kstest.m
 %       obj.KS = [ks_stat,ks_ci,ks_p];    
       testx = 0:0.01:1; testcdf = unifcdf(testx,0,1); matcdf = [testx' testcdf'];
-      [~,ks_p,ks_stat,ks_ci] = kstest(z,'CDF',matcdf,'Alpha',0.05);
+      [~,ks_p,ks_stat,ks_ci] = kstest(obj.rsISI,'CDF',matcdf,'Alpha',0.05);
       obj.KS = [ks_stat,ks_ci,ks_p];      
-      [ks_stat,ks_ci,ks_p]
+%       [ks_stat,ks_ci,ks_p] % uncomment to check internal KStest against
+%       stat toolbox's kstest.m
       
     end
     
@@ -431,19 +432,6 @@
       end
     end
     
-    function perf_pred(obj)
-      % function to handle perfect predictors
-      %
-      %
-      yind = find(y);
-      
-      % for each index in yind, find time afterwards
-      % where we should eliminate data
-      
-      tind = yind+0;
-      obj.X(tind,:) = [];      
-    end
-    
     function [b,stats] = glmfit0(obj, X, y_in, link)
       
       if size(y_in,2)>size(y_in,1), y = y_in';
@@ -468,6 +456,7 @@
       p = size(X,2);
       pwts = ones(N,1);
       b = ones(p,1);
+      R = eye(p);
       eta = linkFn(mu);
       
       % convergence parameters
@@ -478,6 +467,7 @@
       for iter = 1:iterLim
         z = eta - offset + (y - mu) .* linkFnprime(mu);
         b_old = b;
+        R_old = R;
         deta = linkFnprime(mu);
         sqrtirls = abs(deta) .* sqrtvarFn(mu);
         sqrtw = sqrt(pwts) ./ sqrtirls;
@@ -486,28 +476,22 @@
         zw = z .* sqrtw;
         Xw = X .* sqrtw(:,ones(1,p));
         [Q,R0] = qr(Xw,0);
-        if iter>20
-          0;
-        end
-        
-        if ~isempty(regexp(lastwarn(),'singular','once'))
-          iter
-          fprintf('\nWarning: Singular matrix encountered during QR decomposition\n');
-          break;
-        end
-        
         R = R0;
         b = R \ (Q'*zw);
-
-        % show estimate at each step
-        % [[iter;0] b]
         
+        %-----
+        % if there's a problem with convergence:
+        if sum(isnan(b))>0, iter, b=b_old; R=R_old; break; end
+        %
+        % should we also add a function to diagnose convergence problems
+        % and then take appropriate action -- e.g. find perfect predictors
+        % 
+        %-----
+        
+        % --add call to perfect predictors function ???--
+%         if sum(isnan(b))>0 || rcond(R)<1e-9, iter, b=b_old; R=R_old; break; end
         %  stop if converged:
         if norm(b - b_old, inf) < eps, break; end
-        
-        % stop if singular warning received:
-        % DELETED
-        
         eta = offset + X*b;
         mu = ilinkFn(eta);
       end
@@ -516,8 +500,7 @@
       RI = R\eye(p);
       C = RI * RI';
       % assumes no over/under-dispersion (s=1):
-      % C=C*s^2;
-
+      % C=C*s^2;      
       stats.beta = b;
       stats.dfe = N-p;
       stats.sfit = [];
@@ -528,6 +511,19 @@
       stats.t = b ./ stats.se;
       stats.p = 2 * normcdf(-abs(stats.t));
       % stats.wts = diag(W);
+    end
+    
+    function perf_pred(obj)
+      % function to handle perfect predictors
+      %
+      %
+      yind = find(y);
+      
+      % for each index in yind, find time afterwards
+      % where we should eliminate data
+      
+      tind = yind+0;
+      obj.X(tind,:) = [];
     end
 
     function plot(obj, d, p)
@@ -773,10 +769,6 @@
     function gof_plot(obj, d)      
 %
 %	pp_model.gof_plot(d)
-%
-%	pp_gof.m
-%	Part of the Point Process Toolbox
-%	By Grant Fiddyment, Boston University, September 2012
 %	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	INPUTS:-------------------------------
 %	d: a point process data object
@@ -958,4 +950,4 @@
     
   end
   
-  end
+end

@@ -31,12 +31,15 @@ x0 = Y(3,:)-Y(4,:);
 % summarize lags into single number...?
 %
 % then plot...
+% SCALE = 0.1;
 SCALE = 0.1;
 % x = x0(1)*SCALE;
 % y = y0(1)*SCALE;
 x = mean(x0-1)*SCALE;
 y = mean(y0-1)*SCALE;
-x0=x; y0=y;
+[x,y]
+x0=x; y0=y; 
+if abs(x)>5 || abs(y)>5, x=0; y=0; end
 plot(ctr(1)+[0 x], ctr(2)+[0 y], PLOT_COLOR);
 
 end

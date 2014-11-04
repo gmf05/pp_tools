@@ -53,10 +53,28 @@ classdef Neuroport
       int = find(obj.coord(:,1)>Xlo & obj.coord(:,1)<Xhi & ...
                  obj.coord(:,2)>Ylo & obj.coord(:,2)<Yhi)';
       % remove bad channels
-      % for MG49: channel 89 is bad
+      % for MG49: channels 67 & 89 are bad (67 left edge, 89 interior)
       if isequal('MG49',obj.patient), int = setdiff(int, 89); end
     end
     
+    function bad = badElec(obj)
+      if isequal('MG49',obj.patient)
+        bad=[67 89];
+      elseif isequal('MG63',obj.patient)
+        bad=[41 89];
+      elseif isequal('BW09',obj.patient)
+%         bad=[1 13 20 25 26 33 60 61 89 94 96]; % sz 1
+%         bad=[13 25 33 41 60 89 94]; % sz 2
+        bad=[1 13 20 25 26 33 41 60 61 81 89 94 96]; % sz 3
+      elseif 0==1
+        [];
+      end
+    end
+    
+    function good = goodElec(obj)
+      good = setdiff(1:obj.N_electrodes,obj.badElec());
+    end
+        
     function Nbors = neighbors(obj,i)
       try
         cup = obj.arrayMap(obj.coord(i,1),obj.coord(i,2)+1);
@@ -83,6 +101,17 @@ classdef Neuroport
         error('One (or more neighbors) do not exist');
       end
       Nbors = [cup,cdown,cleft,cright,cupright,cdownright,cupleft,cdownleft];      
+    end
+    
+    function yesNo = adjBad(obj,response)
+      bad = obj.badElec();
+      Nbors = obj.neighbors(response);
+      if ismember(response,bad) || ismember(Nbors(1),bad) || ismember(Nbors(2),bad) || ...
+          ismember(Nbors(3),bad) || ismember(Nbors(4),bad)
+        yesNo = true;
+      else
+        yesNo = false;
+      end
     end
     
     function blank(obj)
@@ -136,8 +165,15 @@ classdef Neuroport
     color_RGB = colormap();    
 %     my_img = phaseintensity(Ws);
     
+    good = obj.goodElec(); bad = obj.badElec();
     for t = 1:T
-      for n = 1:obj.N_electrodes
+      for n = bad
+        x = obj.coord(n,1);
+        y = obj.coord(n,2);        
+        fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], 'w'); hold on;
+      end
+      
+      for n = good
         x = obj.coord(n,1);
         y = obj.coord(n,2);
         if C==0 || isnan(C)
@@ -148,7 +184,7 @@ classdef Neuroport
           col_ind = max(col_ind,1);
         end
         col = color_RGB(col_ind,:);
-        fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col); hold on;
+        fill([x-R x-R x+R x+R],[y-R y+R y+R y-R], col);
 %         text(x,y,num2str(n),'fontsize',22);
       end
       
