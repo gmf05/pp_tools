@@ -1,0 +1,81 @@
+#!/bin/csh
+# mbatch: shell script to submit independent parallel jobs to matlab
+# on a Sun Grid Engine (SGE) system using the command qsub
+#
+# Usage:
+# mbatch myMfile.m (OPTIONAL: number of tasks) (OPTIONAL: additional qsub options)
+#  
+# For example:
+#
+# mbatch myFile
+# Would run myFile.m (task = 1 implicitly)
+#
+# mbatch myFile 3
+# Would run myFile.m for task = 1, 2, 3
+#
+# Written by Grant Fiddyment, Boston University
+# Adapted from submitmjobs by Kadin Tseng kadin@bu.edu
+# www.bu.edu/tech/about/research/training/scv-software-packages/matlab/multiple_matlab_tasks/
+# ===========================================================================================
+
+# handle blank arguments
+if ($#argv < 1) then
+  echo Usage is : mbatch (matlab .m file) (OPTIONAL: number of tasks)
+  exit
+endif
+
+if ($#argv < 2) then
+	set ntasks = 1
+else
+	set ntasks = $2
+endif
+
+# set up file structure 
+set mfile = $1 # NOTE: assumes input name does NOT include ".m"
+set dirout = `date +%s` # create unique output directory
+mkdir $dirout
+cd $dirout
+setenv MATLAB_NTASKS $ntasks
+
+# set batch options for qsub:
+# -V: pass environment variables
+# -j: merge stdout and stderr 
+# -l: limit memory, runtime
+# -pe: set number of processors
+set options = "-V -j y -l mem_total=7G -l h_rt=72:00:00 -pe omp 1"
+
+# create script
+# (1) add shell commands
+set shfile = "$mfile.sh"
+echo '#\!/bin/csh' >! $shfile
+echo "unsetenv DISPLAY" >> $shfile
+echo 'matlab -nojvm -singleCompThread -r "cd ..;' "addpath('$PP_TOOLS'); pp_tools(); global TASK NTASKS; TASK = str2num(getenv('MATLAB_TASK')); NTASKS = str2num(getenv('MATLAB_NTASKS')); $mfile"'; exit"' >> $shfile
+# (2) copy matlab script in comments
+echo "" >> $shfile
+echo "# matlab script $mfile" >> $shfile
+echo ": <<'COMMENT'" >> $shfile
+echo "% --- $mfile.m : `date` --- " >> $shfile
+echo "" >> $shfile
+cat ../$mfile.m >> $shfile
+echo "% end of matlab script" >> $shfile
+echo "COMMENT" >> $shfile
+echo "" >> $shfile # add empty line
+# (3) mark executable
+chmod u+x $shfile
+
+# loop over tasks, submit each one
+if ($ntasks == 1) then
+  qsub -N $mfile -o $mfile.out $options $shfile
+else	
+  foreach task (`/usr/bin/seq $ntasks`)
+    setenv MATLAB_TASK $task
+    qsub -N $mfile$task -o $mfile$task.out $options $shfile
+  end
+endif
+
+# post-processing, if desired
+# make post-processing script here? name: $1_post
+#qsub -hold_jid "$myjob*" -V -j y $1_post.sh
+
+# cd .. 
+# keep this line to ensure newline
