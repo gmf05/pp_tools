@@ -53,7 +53,7 @@ classdef pp_data
     end
     
     function obj = refresh(obj)
-      obj = pp_data(obj.dn,obj.t,obj.name,obj.Labels);
+      obj = pp_data(obj.dn,obj.t,'name',obj.name,'labels',obj.labels,'marks',obj.marks);
     end
     
     % Returns a data object with the specified channels
@@ -123,7 +123,7 @@ classdef pp_data
 
     function obj = concat(obj,obj2)
       % a couple general checks between old & new objects
-      if obj.dt~=obj2.dt
+      if abs(obj.dt-obj2.dt)>1e-10
         error('ERROR: data objects must have the same time resolution dt');
       elseif size(obj.dn,1)~=size(obj2.dn,1)
         error('ERROR: data objects must contain the same number of dimensions');
@@ -133,7 +133,12 @@ classdef pp_data
       obj.marks = [obj.marks obj2.marks];
       obj.T = length(obj.t);
       % check labels to ensure they match??
-      
+    end
+    
+    function obj = add_channels(obj,obj2)
+      obj.dn = [obj.dn; obj2.dn];
+      obj.N_channels = obj.N_channels+size(obj2.dn,1);
+      obj.labels = {obj.labels{:} obj2.labels{:}};
     end
     
     function plot(obj, plot_type, params)
@@ -409,11 +414,10 @@ classdef pp_data
       end
     end
     
-    function intvls = spike_trigger(obj,thresh,lockout)
+    function intvls = spike_trigger(obj,thresh,lockout,dL,dR)
       % set parameters
-%       dL = 0.05; dR = 0.2; % [sec]
-%       dL = 0; dR = 1; % [sec]
-      dL = 0; dR = 0; % [sec]
+      if nargin<4, dL=0; end
+      if nargin<5, dR=0; end
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
 
       % get array of spike indices, channels

@@ -113,7 +113,7 @@
       obj.X = obj.X(burn_in+1:end,:);
       obj.y = obj.y(burn_in+1:end);            
       
-      fprintf(['Estimating parameters...\n']);
+      fprintf(['Estimating parameters...']);
 %       % MATLAB glmfit routine:
 %       [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
 
@@ -148,7 +148,7 @@
           end
           noise_mtx = noise_mtx(fs_update_ind,fs_update_ind);
           
-          fprintf(['Filtering backward...']);
+          fprintf(['\nFiltering backward...']);
           for t = 1:d.T-burn_in
             dL_dB = X_bwd(t,fs_update_ind);
             lt = exp(X_bwd(t,:)*b_bwd);
@@ -172,7 +172,7 @@
           Ws{1} = W;
           count = 2;
           
-          fprintf(['Filtering forward...']);
+          fprintf(['\nFiltering forward...']);
           for t = 1:d.T-burn_in
             dL_dB = obj.X(t,fs_update_ind);
             lt = exp(obj.X(t,:)*b);
@@ -472,28 +472,37 @@
         sqrtirls = abs(deta) .* sqrtvarFn(mu);
         sqrtw = sqrt(pwts) ./ sqrtirls;
 
-        %  from wfit.m:
+        % orthogonal (QR) decomposition of Xw
+        % avoids forming the product Xw'*Xw
         zw = z .* sqrtw;
         Xw = X .* sqrtw(:,ones(1,p));
-        [Q,R0] = qr(Xw,0);
-        R = R0;
+        [Q,R] = qr(Xw,0);
         b = R \ (Q'*zw);
-        
+              
         %-----
+        % check convergence
         % if there's a problem with convergence:
+%         if rcond(R)<1e-8, iter, b=b_old; R=R_old; break; end
+%         if rcond(R)<1e-8, disp('Flat likelihood'), iter, break; end
+        if rcond(R)<1e-8 || isnan(rcond(R)), warning('Flat likelihood'), iter; end
         if sum(isnan(b))>0, iter, b=b_old; R=R_old; break; end
+        
         %
         % should we also add a function to diagnose convergence problems
-        % and then take appropriate action -- e.g. find perfect predictors
+        % and then take appropriate action???
         % 
+        % stop if converged:
+        if norm(b - b_old, inf) < eps
+          fprintf(['Converged in ' num2str(iter) ' steps. ']);
+          break;
+        end
         %-----
         
-        % --add call to perfect predictors function ???--
-%         if sum(isnan(b))>0 || rcond(R)<1e-9, iter, b=b_old; R=R_old; break; end
-        %  stop if converged:
-        if norm(b - b_old, inf) < eps, break; end
         eta = offset + X*b;
         mu = ilinkFn(eta);
+%         % plot to debug convergence issues:
+%         clf, subplot(211), plot(b,'b-o'); subplot(212), plot(deta), pause;
+%         save(['~/temp/irls' num2str(iter) '.mat'],'-v7.3','eta','mu','z','y','b','b_old','R','R_old','Q','Xw','zw','X','offset','N','p','pwts');
       end
       
       % glmfit covariance:
@@ -558,11 +567,13 @@
             [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,W1,Z);
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
+%             plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
           else
             [t_axis,Y] = plot_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
             plot(t_axis,exp(Y')/d.dt,'Color',PLOT_COLOR,'linewidth',2);
+%             plot(p.covariate_knots{1}*t_axis(end),exp(b1(2:end-1))/d.dt,'Color',[PLOT_COLOR 'o'],'linewidth',2);
           end
         case 'indicator'
           t_axis = p.covariate_knots{1} * (d.t(end)-d.t(1)) + d.t(1);
@@ -574,10 +585,11 @@
             Ylo = Y - Z*sqrt(diag(W1)); Yhi = Y + Z*sqrt(diag(W1)); % 1d case
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             for t = 1:T0-1
+%               plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
               shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR},1);              
             end
           else
-            for t = 1:T0-1
+            for t = 1:T0-1              
               plot([t_axis(t),t_axis(t+1)],exp(b1(t))/d.dt*ones(1,2),PLOT_COLOR,'linewidth',2);
             end
           end
@@ -598,11 +610,13 @@
                   [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
+%                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
+%                   plot(p.covariate_knots{covar_num},exp(obj.b(ind(2:end-1))),[PLOT_COLOR 'o'],'linewidth',2);
                 end
               case 'indicator'
                 lag_axis = p.covariate_knots{covar_num};
@@ -611,6 +625,7 @@
                   error('write more code!');
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
+%                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
@@ -917,9 +932,9 @@
       numISIs = length(obj.rsISI);
       numLags=min(200,numISIs-1);
       [ac,lags,bounds]=autocorr2(obj.rsISI,numLags,round(0.3*numLags),2);
-      plot(lags, ac, [PLOT_COLOR 'x']); hold on
-      plot(lags,bounds(1),'r--','LineWidth', 2);
-      plot(lags,bounds(2),'r--','LineWidth', 2);
+      plot(lags, ac, [PLOT_COLOR 'o']); hold on
+      plot(lags,bounds(1),'r','LineWidth', 2);
+      plot(lags,bounds(2),'r','LineWidth', 2);
       title('autocorrelation');
       xlabel('lags');
     end
