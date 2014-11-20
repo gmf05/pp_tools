@@ -33,10 +33,14 @@ classdef pp_data
     function obj = pp_data(dn,t,varargin)
       
       obj.dn = dn;
-      obj.N_channels = size(dn,1);
-      obj.T = size(dn,2);
-      if nargin<2, obj.t = 1:obj.T;
-      else obj.t = t; end
+      obj.N_channels = size(dn,1);      
+      if nargin<2
+        obj.T = size(dn,2);
+        obj.t = 1:obj.T;
+      else
+        obj.t = t;
+        obj.T = length(t);
+      end
       obj.dt = obj.t(2) - obj.t(1);
       obj.Fs = 1/obj.dt;
      
@@ -466,7 +470,7 @@ classdef pp_data
         % find last spike before lockout period & channel repeat
         spk2 = spk1+1;
         Nchans = length(unique(spkInfo(spk1:spk2,2)));
-        while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
+          while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
           spk2 = spk2+1;
           chans = spkInfo(spk1:spk2,2);
           uchans = unique(chans);    

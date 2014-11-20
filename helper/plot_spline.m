@@ -24,7 +24,7 @@ function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
     
     if range(knots)>1, dtau = 1;
     else dtau = 1e-2; end;
-    
+      
     % tension matrix
     s_coeff = [-s  2-s s-2  s; 2*s s-3 3-2*s -s; ...
                -s   0   s   0;   0   1   0   0];
@@ -37,7 +37,10 @@ function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
     % set X0 based on knots        
     X0 = zeros(NT,N_knots+2);
     
-    spacing = diff(knots)*1/dtau;
+    % note: rounding below fixes occasional error where
+    % 0:spacing(i)-1 turns out to be one element short (because spacing(i)
+    % gets rounded down)
+    spacing = round(diff(knots)*1/dtau); 
     count=1;
     for i=1:length(spacing)
         alphas = (0:spacing(i)-1)./spacing(i);
