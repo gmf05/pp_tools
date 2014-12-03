@@ -1,21 +1,12 @@
-global PP_TOOLS RESCALE_FUNC PLOT_COLOR DO_SAVE DO_CONF_INT ...
-  DO_MASK DATA MGH
-% dropping FONT_SIZE
+global PP_TOOLS PLOT_COLOR DO_CONF_INT DO_MASK
 
 % path variables
-PP_TOOLS = getenv('PP_TOOLS');
-DATA = getenv('DATA');
-MGH = getenv('MGH');
-
-% function used for rescaled interspike intervals
-RESCALE_FUNC = 'exp';
+PP_TOOLS=strrep(which('pp_tools'),'pp_tools.m','');
 
 % plot settings 
 PLOT_COLOR = 'b';
-DO_SAVE = true;
 DO_CONF_INT = true;
 DO_MASK = true;
-
 
 % setting some default options:
 
