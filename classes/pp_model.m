@@ -55,7 +55,6 @@
     % Constructor  
 %     function obj = pp_model(b,W,X,y,C,link)
     function obj = pp_model(name,b,W,X,y,C,link)
-      obj.rs = 'exp';
       if nargin>0
         obj.name = name;
         if nargin>1        
@@ -96,7 +95,7 @@
       fprintf(['\nFitting point process model...\n']);      
       obj.fit_method = p.fit_method;
       obj.link = p.link;
-      obj.rs = p.rs;
+
       N_cov_types = length(p.covariate_names);
       obj.y = d.dn(p.response,:)'; % response variable      
       
@@ -838,16 +837,17 @@
       ylabel('[Hz]');
     end
       
-    function [ks_stat, ks_ci] = ks_plot(obj)
+    function [ks_stat, ks_ci] = ks_plot(obj, params)
+      if nargin<2, params.rs = 'exp'; params.alpha = 0.05; end
       global PLOT_COLOR     
 %       Z = 1.96; 
       % Z = 1.63;
-      Z = 1.36;
+      Z = 1.36; % depends on alpha!
       %   calculate ks statistic, confidence bounds
       numISIs = length(obj.rsISI);    
       if numISIs>2
         [eCDF,xCDF] = ecdf(sort(obj.rsISI));
-        switch obj.rs
+        switch params.rs
         case 'identity'
           mycdf = @(x)(expcdf(x,1));
         case 'exp'
@@ -882,7 +882,10 @@
     end
       
   
-    function [qx, qz] = qq_plot(obj)
+    function [qx, qz] = qq_plot(obj,params)
+      
+      if nargin<2, params.rs = 'exp'; params.alpha=0.05; end
+      
       global PLOT_COLOR
       z = sort(obj.rsISI);
       if length(z)<2
@@ -890,7 +893,7 @@
       else
         I = 0:.05:1;
         qz = quantile(z,I);
-        switch obj.rs
+        switch params.rs
         case 'identity'
 %           qx = quantile(expcdf(I,1),I);
           qx = expinv(I,1);
@@ -939,7 +942,9 @@
       xlabel('lags');
     end
     
-    function obj = rescaled_ISI(obj)
+    function obj = rescaled_ISI(obj,params)
+      
+      if nargin<2, params.rs = 'exp'; end
       
       spike_ind = [0; find(obj.y)];
       numISIs = length(spike_ind)-1;
@@ -953,7 +958,7 @@
         z(j) = sum(obj.CIF(spike_ind(j)+1:spike_ind(j+1)));
       end
 
-      switch obj.rs
+      switch params.rs
         case 'exp'
           z = 1-exp(-z);
         case 'identity'
