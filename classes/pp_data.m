@@ -44,9 +44,7 @@ classdef pp_data
       obj.dt = obj.t(2) - obj.t(1);
       obj.Fs = 1/obj.dt;
      
-      %
-      % TO DO: parse varargin for auxillary data: marks, labels, etc
-      %
+      % parse varargin for name, marks, labels
       for n = 1:2:length(varargin)
         switch varargin{n}
           case 'name', obj.name = varargin{n+1};
