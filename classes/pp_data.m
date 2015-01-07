@@ -240,6 +240,7 @@ classdef pp_data
           xlabel('time [s]');
           ylabel('channel');
           title([ttl ' raster plot']);
+          axis ij;
         case 'raster2'
           gca(); hold on;
           % old plotting routine: connected spike trains but SLOW
@@ -254,6 +255,7 @@ classdef pp_data
           xlabel('time [s]');
           ylabel('channel');
           title([ttl ' raster plot']);
+          axis ij;
           
           
           
@@ -280,6 +282,7 @@ classdef pp_data
           xlabel('time [s]');
           ylabel('channel');
           title([ttl ' raster plot']);
+          axis ij
       end
     end
     
@@ -438,7 +441,7 @@ classdef pp_data
         while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
           spk2 = spk2+1;
           chans = spkInfo(spk1:spk2,2);
-          uchans = unique(chans);    
+          uchans = unique(chans);
           Nchans = length(uchans);
         end
         spk2 = spk2-1;
@@ -452,9 +455,9 @@ classdef pp_data
       end
     end
     
-    function intvls = spike_trigger2(obj,thresh,max_size)
-      dL = 0; dR = 0; % [sec]
+    function intvls = spike_trigger2(obj,thresh,lockout,dL,dR)
       dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
+
       % get array of spike indices, channels
       spkInfo = obj.raster_ind();
       Nspks = size(spkInfo,1);
@@ -465,71 +468,46 @@ classdef pp_data
       spk1=1;
       while spk1 < Nspks
         istart = spkInfo(spk1,1);
-        % find last spike before lockout period & channel repeat
-        spk2 = spk1+1;
-        Nchans = length(unique(spkInfo(spk1:spk2,2)));
-          while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
+        % find last spike before delay of 'lockout' occurs, repeat
+        spk2 = spk1;
+        while spk2 < Nspks && spkInfo(spk2+1,1) - spkInfo(spk2,1) <= lockout
           spk2 = spk2+1;
-          chans = spkInfo(spk1:spk2,2);
-          uchans = unique(chans);    
-          Nchans = length(uchans);
         end
-        spk2 = spk2-1;
+        Nchans = length(unique(spkInfo(spk1:spk2,2)));
 
+        % ensure at least 'thresh' unique channels spike
         if Nchans>=thresh
           iend = spkInfo(spk2,1);
-          intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)];
+          intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)]; %#ok
         end
-
         spk1 = spk2+1;
+      end
+    end
+    
+    function obj0 = spike_trigger_hist(obj,intvls,time0)
+      objcat = obj.sub_time_fast(intvls(1,1):intvls(1,2)).reset_time();
+      objcat.t = objcat.t - time0(1);
+      for i = 2:size(intvls,1)
+        obji = obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time();
+        obji.t = obji.t + time0(1);
+        objcat = objcat.concat(obji);
+      end
+      
+      obj0 = obj;
+      obj0.dn = zeros(obj.N_channels, length(time0));
+      for n = 1:obj.N_channels
+        obj0.dn(n,:) = hist(objcat.t(objcat.dn(n,:)>0), time0);
       end
       
     end
     
-    function intvls = spike_trigger3(obj,thresh,min_isi)
-      dL = 0; dR = 0; % [sec]
-      dLbins = round(dL/obj.dt); dRbins = round(dR/obj.dt);
-      % get array of spike indices, channels
-      spkInfo = obj.raster_ind();
-      Nspks = size(spkInfo,1);
-
-      % iterate over spikes, finding windows where enough
-      % channels spike
-      intvls = [];
-      spk1=1;
-      
-      %
-      % find all instances where > thresh channels spike
-      % -> to find termination, keep going through time until 
-      % a channel repeat spikes OR until there is an isi >= min_isi
-      %
-% % %       while spk1 < Nspks
-% % %         istart = spkInfo(spk1,1);
-% % %         % find last spike before lockout period & channel repeat
-% % %         spk2 = spk1+1;
-% % %         Nchans = length(unique(spkInfo(spk1:spk2,2)));
-% % %         while spkInfo(spk2,1)-istart<=lockout && spk2 < Nspks && Nchans==spk2-spk1+1
-% % %           spk2 = spk2+1;
-% % %           chans = spkInfo(spk1:spk2,2);
-% % %           uchans = unique(chans);    
-% % %           Nchans = length(uchans);
-% % %         end
-% % %         spk2 = spk2-1;
-% % % 
-% % %         if Nchans>=thresh
-% % %           iend = spkInfo(spk2,1);
-% % %           intvls = [intvls; istart-dLbins min(iend+dRbins,obj.T)];
-% % %         end
-% % % 
-% % %         spk1 = spk2+1;
-% % %       end
-      
-    end
-    
-    function mov = spike_trigger_plot(obj,intvls)
+    function mov = spike_trigger_plot(obj,intvls,dTL)
 %       intvls = obj.spike_trigger(thresh,lockout);
       for i = 1:size(intvls,1)
-        obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
+%         obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
+        obj0 = obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time();
+        obj0.t = obj0.t - dTL;
+        obj0.plot('raster')
         hold on;
         pause(0.05);
         mov(i) = getframe();
@@ -540,7 +518,7 @@ classdef pp_data
       
     end
     
-    function obj0 = sort_mean_time(obj,intvls)
+    function [obj0, ord] = sort_mean_time(obj,intvls)
 %       intvls = obj.spike_trigger(thresh,lockout);
 %       intvls(end,:)=[]; % weird bug, last interval is no good??
       objcat = obj.sub_time_fast(intvls(1,1):intvls(1,2)).reset_time();

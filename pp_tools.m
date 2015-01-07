@@ -4,6 +4,7 @@ fprintf('Grant Fiddyment  Boston U, 01/2014\n \n');
 
 % add paths to all functions:
 PP_TOOLS='~/Code/repos/pp_tools';
+addpath(PP_TOOLS);
 addpath([PP_TOOLS '/classes']);
 addpath([PP_TOOLS '/helper']);
 addpath([PP_TOOLS '/examples']);
