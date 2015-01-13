@@ -248,7 +248,7 @@ classdef pp_data
           for i = 1:obj.N_channels
             ind = find(obj.dn(i,:));
             for k = 1:length(ind)
-              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], PLOT_COLOR);
+              plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'Color', PLOT_COLOR);
             end
           end
 
@@ -502,15 +502,18 @@ classdef pp_data
     end
     
     function mov = spike_trigger_plot(obj,intvls,dTL)
-%       intvls = obj.spike_trigger(thresh,lockout);
-      for i = 1:size(intvls,1)
+      N = size(intvls,1);
+      global PLOT_COLOR
+      rgb = jet(N);
+      for n = 1:N
 %         obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time().plot('raster');
-        obj0 = obj.sub_time_fast(intvls(i,1):intvls(i,2)).reset_time();
+        obj0 = obj.sub_time_fast(intvls(n,1):intvls(n,2)).reset_time();
         obj0.t = obj0.t - dTL;
-        obj0.plot('raster')
+        PLOT_COLOR = rgb(n,:);
+        obj0.plot('raster2')
         hold on;
         pause(0.05);
-        mov(i) = getframe();
+        mov(n) = getframe();
       end
     end
     
@@ -532,6 +535,40 @@ classdef pp_data
       end
       [~,ord] = sort(srt);
       obj0 = obj.sub_data(ord);
+    end
+    
+    function [means, vars] = trigger_stats(obj, intvls)
+      spkInfo = obj.raster_ind();
+      spkInfo0 = [spkInfo 0*spkInfo(:,1)];
+      j1 = 1;
+      for k = 1:size(intvls,1)
+        while spkInfo(j1,1) < intvls(k,1)
+          j1 = j1+1;
+        end
+        j2 = j1;
+        while spkInfo(j2,1) < intvls(k,2) 
+          j2 = j2+1;
+        end
+        if spkInfo(j2,1) > intvls(k,2)
+          j2 = j2-1;
+        end
+        spkInfo0(j1:j2, 3) = k;
+        j1 = j2+1;
+      end
+      [~, ind] = sort(spkInfo(:,2));
+      spkInfo0 = spkInfo0(ind, :);
+
+      means = zeros(1, obj.N_channels);
+      vars = zeros(1, obj.N_channels);
+      for i = 1:obj.N_channels
+        ind = find(spkInfo0(:, 2)==i); % get spikes from channel i
+        ind0 = ind(spkInfo0(ind, 3)>0); % get spikes that fall in waves
+        N = length(ind0);
+        starts = intvls(spkInfo0(ind0, 3), 1);
+        delays = (spkInfo0(ind0, 1) - starts) * obj.dt * 1e3; % time since wave start [in ms]
+        means(i) = mean(delays);
+        vars(i) = var(delays);
+      end
     end
     
   end

@@ -18,7 +18,7 @@
 %   end
 %
 %   methods
-%     m = m.fit(d,p)    
+%     m = m.fit(d,p)
 %     Estimates model parameters & covariance
 %     INPUT: point process data (d), parameters (p)
 %     OUPUT: estimated point process model (m)
