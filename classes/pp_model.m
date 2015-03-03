@@ -418,7 +418,7 @@
                         Xi(spks(i)+(onset:+bins_to_end),:) + d(spks(i)) * Xs(1:bins_to_end-onset+1,:);
                 else
                     Xi(spks(i)+(onset:offset),:) = ...
-                        Xi(spks(i)+(onset:offset),:) + Xs;
+                        Xi(spks(i)+(onset:offset),:) + d(spks(i)) * Xs;
                 end
             end
           case 'indicator'
@@ -543,6 +543,9 @@
       Z = 2;
       N_covar_types = length(p.covariate_names);
       burn_in = p.get_burn_in();
+%       dtFactor = d.dt * 1e3; % scale to [[ms]] or sec?
+      dtFactor = d.dt; % scale to ms or [[sec]]?
+      
       % NOTE: ASSUMES 'rate' is first covariate
       % and all other types ('self-hist', 'ensemble', etc)
       % come afterwards
@@ -607,13 +610,14 @@
               case 'spline'
                 if DO_CONF_INT
                   [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
-                  lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
+                  lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
                   [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
-                  lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
+%                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
+                  lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
 %                   plot(p.covariate_knots{covar_num},exp(obj.b(ind(2:end-1))),[PLOT_COLOR 'o'],'linewidth',2);
                 end
@@ -631,7 +635,14 @@
                 end
             end
             plot([lag_axis(1) lag_axis(end)],[1 1],'k--');
-            xlabel('lag time [ms]');
+            if dtFactor==d.dt
+              lagunit = '[sec]';
+            elseif dtFactor==d.dt*1e3
+              lagunit = '[ms]';
+            else
+              lagunit = '[]';
+            end
+            xlabel(['lag time ' lagunit]);
             ylabel('mod.');
 
           case {'filt', 'smooth'}
@@ -640,7 +651,7 @@
             switch p.covariate_bases{covar_num}
               case 'spline'                
                 lag_axis = p.covariate_knots{covar_num}(1):p.covariate_knots{covar_num}(end);
-                lag_axis = lag_axis*d.dt*1e3; % covert from bins to ms
+                lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                 all_L = zeros(length(lag_axis), NT);            
                 for t = 1:NT
                   if DO_MASK
@@ -657,7 +668,7 @@
                 end
               case 'indicator'
                 lag_axis = p.covariate_knots{covar_num}(1):p.covariate_knots{covar_num}(end);
-                lag_axis = lag_axis*d.dt*1e3; % covert from bins to ms
+                lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                 all_L = zeros(length(lag_axis), NT);
                 for t = 1:NT
                   if DO_MASK
@@ -676,9 +687,16 @@
             end
             imagesc(d.t(t_ind), lag_axis, all_L);
             xlabel('time [s]');
-            ylabel('lag time [ms]');            
+            if dtFactor==d.dt
+              lagunit = '[sec]';
+            elseif dtFactor==d.dt*1e3
+              lagunit = '[ms]';
+            else
+              lagunit = '[]';
+            end
+            ylabel(['lag time ' lagunit]);
         end
-        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
+        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.9]*dtFactor));
         title(p.covariate_names{covar_num});
       end
 

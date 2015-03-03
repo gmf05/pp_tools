@@ -298,6 +298,7 @@ classdef pp_data
 %       dn_old = obj.dn;
       obj.t = obj.t(1:dT:end);
       obj.dt = obj.dt*dT;
+      obj.Fs = 1/obj.dt;
       obj.T = length(obj.t);     
       
       % method 1
@@ -453,6 +454,10 @@ classdef pp_data
 
         spk1 = spk2+1;
       end
+      
+      % make sure detected intervals lie within data's time axis
+      if intvls(1) < 1, intvls(1) = 1; end
+      if intvls(end) > obj.T, intvls(end) = obj.T; end
     end
     
     function intvls = spike_trigger2(obj,thresh,lockout,dL,dR)
@@ -482,6 +487,10 @@ classdef pp_data
         end
         spk1 = spk2+1;
       end
+      % make sure detected intervals lie within data's time axis
+      if isempty(intvls), return; end
+      intvls(intvls<1) = 1;
+      intvls(intvls>obj.T) = obj.T;
     end
     
     function obj0 = spike_trigger_hist(obj,intvls,time0)
@@ -512,15 +521,11 @@ classdef pp_data
         PLOT_COLOR = rgb(n,:);
         obj0.plot('raster2')
         hold on;
-        pause(0.05);
-        mov(n) = getframe();
+%         pause(0.05);
+%         mov(n) = getframe();
       end
     end
-    
-    function spike_trigger_plot2(obj,intvls)
-      
-    end
-    
+        
     function [obj0, ord] = sort_mean_time(obj,intvls)
 %       intvls = obj.spike_trigger(thresh,lockout);
 %       intvls(end,:)=[]; % weird bug, last interval is no good??
@@ -537,7 +542,7 @@ classdef pp_data
       obj0 = obj.sub_data(ord);
     end
     
-    function [means, vars] = trigger_stats(obj, intvls)
+    function [means, stds] = trigger_stats(obj, intvls)
       spkInfo = obj.raster_ind();
       spkInfo0 = [spkInfo 0*spkInfo(:,1)];
       j1 = 1;
@@ -559,17 +564,16 @@ classdef pp_data
       spkInfo0 = spkInfo0(ind, :);
 
       means = zeros(1, obj.N_channels);
-      vars = zeros(1, obj.N_channels);
+      stds = zeros(1, obj.N_channels);
       for i = 1:obj.N_channels
         ind = find(spkInfo0(:, 2)==i); % get spikes from channel i
         ind0 = ind(spkInfo0(ind, 3)>0); % get spikes that fall in waves
         N = length(ind0);
         starts = intvls(spkInfo0(ind0, 3), 1);
         delays = (spkInfo0(ind0, 1) - starts) * obj.dt * 1e3; % time since wave start [in ms]
-        means(i) = mean(delays);
-        vars(i) = var(delays);
+        means(i) = nanmean(delays);
+        stds(i) = nanstd(delays);
       end
     end
-    
   end
 end
