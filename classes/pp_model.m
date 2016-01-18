@@ -7,7 +7,7 @@
 %     X % design (data) matrix
 %     y % response process
 %     CIF % conditional intensity function
-%     fit_method % glmfit, filt, or smooth
+%     fit_method % irls, filt, or smooth
 %     link % link function name, if using glmfit 
 %     stats % structure like the one returned by glmfit
 %     LL % log-likelihood
@@ -117,7 +117,7 @@
 %       [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
 
       % custom glmfit routine:
-      [b,stats] = obj.glmfit0(obj.X,obj.y,obj.link);
+      [b,stats] = obj.irls(obj.X,obj.y,obj.link);
       switch obj.fit_method
         case 'glmfit'
           obj.b = b;
@@ -135,7 +135,7 @@
           X_bwd = flipud(obj.X);
           y_bwd = fliplr(obj.y);
 %           [b_bwd,~,stats_bwd] = glmfit(X_bwd,y_bwd,'poisson','link',obj.link,'constant','off');
-          [b_bwd,stats_bwd] = obj.glmfit0(X_bwd,y_bwd,obj.link);
+          [b_bwd,stats_bwd] = obj.irls(X_bwd,y_bwd,obj.link);
           W_bwd = stats_bwd.covb;
           
           % noise (Kalman gain) matrix:
@@ -207,7 +207,7 @@
           obj.CIF = zeros(d.T - burn_in, 1);
           X_bwd = flipud(obj.X);
           y_bwd = fliplr(obj.y);
-          [b_bwd,stats_bwd] = obj.glmfit0(X_bwd,y_bwd,obj.link);
+          [b_bwd,stats_bwd] = obj.irls(X_bwd,y_bwd,obj.link);
           W_bwd = stats_bwd.covb;
           
           % noise (Kalman gain) matrix:
@@ -431,7 +431,7 @@
       end
     end
     
-    function [b,stats] = glmfit0(obj, X, y_in, link)
+    function [b,stats] = irls(obj, X, y_in, link)
       
       if size(y_in,2)>size(y_in,1), y = y_in';
       else y = y_in; end;
@@ -555,7 +555,7 @@
       T0 = length(p.covariate_knots{1});
       ind = p.covariate_ind{1};
       switch obj.fit_method
-        case 'glmfit'
+        case 'irls'
           b1 = obj.b(ind);
           if DO_CONF_INT, W1 = obj.W(ind,ind); end;
         case {'filt','smooth'}
@@ -566,13 +566,13 @@
       switch p.covariate_bases{1}
         case 'spline'
           if DO_CONF_INT
-            [t_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{1},b1,p.s,W1,Z);
+            [t_axis,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{1},b1,p.s,W1,Z);
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
 %             plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
             shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
           else
-            [t_axis,Y] = plot_spline(p.covariate_knots{1},obj.b(ind),p.s);
+            [t_axis,Y] = cubic_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
             plot(t_axis,exp(Y')/d.dt,'Color',PLOT_COLOR,'linewidth',2);
 %             plot(p.covariate_knots{1}*t_axis(end),exp(b1(2:end-1))/d.dt,'Color',[PLOT_COLOR 'o'],'linewidth',2);
@@ -605,17 +605,17 @@
         subplot(N_covar_types,1,covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
-          case 'glmfit'
+          case 'irls'
             switch p.covariate_bases{covar_num}
               case 'spline'
                 if DO_CONF_INT
-                  [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
+                  [lag_axis,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
-                  [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
+                  [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
 %                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
@@ -655,14 +655,14 @@
                 all_L = zeros(length(lag_axis), NT);            
                 for t = 1:NT
                   if DO_MASK
-                    [~,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s,obj.W{t}(ind,ind),Z);
+                    [~,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s,obj.W{t}(ind,ind),Z);
                     % mask y:
                     good_ind = [find(Yhi>0)', find(Ylo<0)'];
                     bad_ind = setdiff(1:length(lag_axis), good_ind);
                     Y(bad_ind) = 0;
                     all_L(:,t) = exp(Y');
                   else
-                    [~,Y] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s);
+                    [~,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s);
                     all_L(:,t) = exp(Y');                
                   end
                 end
@@ -719,16 +719,16 @@
         subplot(N_covar_types,1,covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
-          case 'glmfit'
+          case 'irls'
             switch p.covariate_bases{covar_num}
               case 'spline'
                 if DO_CONF_INT
-                  [lag_axis,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
+                  [lag_axis,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
                   shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
-                  [lag_axis,Y] = plot_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
+                  [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   plot(lag_axis,exp(Y'),PLOT_COLOR,'linewidth',2);
                 end
@@ -758,14 +758,14 @@
                 all_L = zeros(length(lag_axis), NT);            
                 for t = 1:NT
                   if DO_MASK
-                    [~,Y,Ylo,Yhi] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s,obj.W{t}(ind,ind),Z);
+                    [~,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s,obj.W{t}(ind,ind),Z);
                     % mask y:
                     good_ind = [find(Yhi>0)', find(Ylo<0)'];
                     bad_ind = setdiff(1:length(lag_axis), good_ind);
                     Y(bad_ind) = 0;
                     all_L(:,t) = exp(Y');
                   else
-                    [~,Y] = plot_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s);
+                    [~,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b{t}(ind),p.s);
                     all_L(:,t) = exp(Y');                
                   end
                 end

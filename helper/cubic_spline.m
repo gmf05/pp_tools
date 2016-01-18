@@ -1,6 +1,6 @@
-function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
+function [tau, y, ylo, yhi] = cubic_spline(knots, b, s, W, Z, do_mask)
 %   plot_spline.m
-%   [tau, y, y_lo, y_hi] = plot_spline(knots, b, s, W, Z)
+%   [tau, y, y_lo, y_hi] = cubic_spline(knots, b, s, W, Z)
 %   knots: partition of the covariate axis
 %   b: model parameters
 %   s: tension parameter (usually 0.5)
@@ -54,12 +54,13 @@ function [tau, y, y_lo, y_hi, covr] = plot_spline(knots, b, s, W, Z, do_mask)
     
     % get confidence intervals, if directed
     if do_conf_int
-        y_hi = X0*b + 2*sqrt(diag(X0*W*X0'));
-        y_lo = X0*b - 2*sqrt(diag(X0*W*X0'));
-        covr = X0*W*X0';
+        R = cholcov(W);        
+        dy = sum((X0*R').^2, 2);
+        yhi = y + Z*sqrt(dy);
+        ylo = y - Z*sqrt(dy);
         
         if do_mask
-            ind = find(y_hi'>0 & y_lo'<0);
+            ind = find(yhi'>0 & ylo'<0);
             y(ind) = 0;
         end
     end
