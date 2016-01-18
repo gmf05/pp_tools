@@ -45,4 +45,3 @@ set(0,'defaulttextfontname',fontname);
 set(0,'defaultaxesfontsize',fontsize);
 set(0,'defaulttextfontsize',fontsize);
 
-

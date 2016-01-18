@@ -101,7 +101,7 @@
       
       % make design matrix
       N_cov = p.covariate_ind{end}(end); % total # of covariates
-      fs_update_ind = p.covariate_ind{1}+1:N_cov;
+      fs_update_ind = p.covariate_ind{1}(end)+1:N_cov; % which covariates are dynamic?
       obj.X = ones(d.T,N_cov);
       fprintf(['Building design matrix...\n']);
       obj = obj.makeX(d,p);      
@@ -126,7 +126,7 @@
           obj.CIF = exp(obj.X*b);
           obj.stats=stats;
         
-        case 'filt'                    
+        case {'filt', 'filter'}
           % initialize arrays
           NT = length(burn_in:p.downsample_est:d.T);
           bs = cell(1,NT);
@@ -198,7 +198,7 @@
           obj.b = bs;
           obj.W = Ws;
           
-        case 'smooth'
+        case {'smooth', 'smoother'}
           bs = cell(1,d.T-burn_in);
           Ws = cell(1,d.T-burn_in);
           NT = length(burn_in:p.downsample_est:d.T);
@@ -285,8 +285,8 @@
       end
       fprintf(['Done!\n']);
 
-      obj = obj.calcGOF(); % goodness-of-fit
-    end        
+%       obj = obj.calcGOF(); % goodness-of-fit
+    end
     
     function obj = calcGOF(obj, p)      
       switch obj.link
@@ -552,6 +552,7 @@
       
       % RATE----------------------
       subplot(N_covar_types,1,1); hold on;
+%       figure(1); hold on;
       T0 = length(p.covariate_knots{1});
       ind = p.covariate_ind{1};
       switch obj.fit_method
@@ -570,7 +571,7 @@
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
 %             plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
-            shadedErrorBar(t_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR});
+            boundedline(t_axis,L,[Lhi-L; L-Llo],PLOT_COLOR);
           else
             [t_axis,Y] = cubic_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
@@ -588,7 +589,8 @@
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
             for t = 1:T0-1
 %               plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
-              shadedErrorBar([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR},1);              
+%               boundedline([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR});
+              boundedline([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],PLOT_COLOR);
             end
           else
             for t = 1:T0-1              
@@ -603,6 +605,7 @@
       % OTHER COVARIATES----------
       for covar_num = 2:N_covar_types        
         subplot(N_covar_types,1,covar_num); hold on;
+%         figure(covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
           case 'glmfit'
@@ -613,7 +616,7 @@
                   lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[Lhi-L; L-Llo]',PLOT_COLOR);
                 else
                   [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
 %                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -629,7 +632,7 @@
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[Lhi-L; L-Llo]',PLOT_COLOR);
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
@@ -728,7 +731,7 @@
                   [lag_axis,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
                   [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -741,14 +744,14 @@
                   error('write more code!');
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  shadedErrorBar(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
             end
             plot([lag_axis(1) lag_axis(end)],[1 1],'k--');
-            xlabel('lag time [ms]');
-            ylabel('mod.');
+            xlabel('Lag Time [ms]');
+            ylabel('Modulation');
 
           case {'filt', 'smooth'}
             t_ind = burn_in+1:p.downsample_est:d.T; % modified time axis
@@ -791,10 +794,10 @@
                 end
             end
             imagesc(d.t(t_ind), lag_axis, all_L);
-            xlabel('time [s]');
-            ylabel('lag time [ms]');            
+            xlabel('Time [s]');
+            ylabel('Lag Time [ms]');            
         end
-        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
+        %xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.8]*d.dt*1e3));
         title(p.covariate_names{covar_num});
       end
       

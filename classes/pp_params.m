@@ -84,10 +84,13 @@ classdef pp_params
       obj.covariate_ind{end+1} = ind;
     end
     
-    function obj2 = get_covar(obj, i)
+    function obj2 = get_covar(obj, covi)
       obj2 = pp_params();
-      obj2 = obj2.add_covar(obj.covariate_names{i},obj.covariate_channels{i},obj.covariate_knots{i},obj.covariate_bases{i});
       obj2.fit_method = obj.fit_method; 
+      for i = 1:length(covi)
+        j = covi(i);
+        obj2 = obj2.add_covar(obj.covariate_names{j},obj.covariate_channels{j},obj.covariate_knots{j},obj.covariate_bases{j});
+      end
     end
     
     function burn_in = get_burn_in(obj)

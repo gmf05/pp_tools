@@ -41,8 +41,11 @@ classdef pp_data
         obj.t = t;
         obj.T = length(t);
       end
-      obj.dt = obj.t(2) - obj.t(1);
-      obj.Fs = 1/obj.dt;
+      
+      if obj.T>1 % need more than one time point for sampling freq
+        obj.dt = obj.t(2) - obj.t(1);
+        obj.Fs = 1/obj.dt;
+      end
      
       % parse varargin for name, marks, labels
       for n = 1:2:length(varargin)
@@ -476,12 +479,16 @@ classdef pp_data
       intvls = [];
       spk1=1;
       while spk1 < Nspks
+        hasRepeat = false; % prevent channel from appearing twice in one wave
         istart = spkInfo(spk1,1);
         % find last spike before delay of 'lockout' occurs, repeat
         spk2 = spk1;
-        while spk2 < Nspks && spkInfo(spk2+1,1) - spkInfo(spk2,1) <= lockout
+        while spk2 < Nspks && spkInfo(spk2+1,1) - spkInfo(spk2,1) <= lockout && ~hasRepeat
           spk2 = spk2+1;
+          counts = histc(spkInfo(spk1:spk2,2),1:obj.N_channels);
+          hasRepeat = sum(counts>1);
         end
+        if hasRepeat, spk2 = spk2-1; end
         Nchans = length(unique(spkInfo(spk1:spk2,2)));
 
         % ensure at least 'thresh' unique channels spike
@@ -550,6 +557,7 @@ classdef pp_data
       spkInfo = obj.raster_ind();
       spkInfo0 = [spkInfo 0*spkInfo(:,1)];
       j1 = 1;
+      % for each wave, which spikes belong to it?
       for k = 1:size(intvls,1)
         while spkInfo(j1,1) < intvls(k,1)
           j1 = j1+1;
@@ -572,12 +580,14 @@ classdef pp_data
       for i = 1:obj.N_channels
         ind = find(spkInfo0(:, 2)==i); % get spikes from channel i
         ind0 = ind(spkInfo0(ind, 3)>0); % get spikes that fall in waves
-        N = length(ind0);
+        N = length(ind0); % number of spikes falling within waves
         starts = intvls(spkInfo0(ind0, 3), 1);
         delays = (spkInfo0(ind0, 1) - starts) * obj.dt * 1e3; % time since wave start [in ms]
         means(i) = nanmean(delays);
         stds(i) = nanstd(delays);
+%         stds(i) = quantile(delays, 0.75) - quantile(delays, 0.25);
       end
+%       error('test') % debug stop
     end
   end
 end

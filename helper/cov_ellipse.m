@@ -37,6 +37,6 @@ plot(c_ellipse(1,:), c_ellipse(2,:),'LineWidth',4);
 % plot(exp(b_hat(1)), exp(b_hat(2)), 'rx', 'MarkerSize', 10, 'LineWidth',4); hold on
 % plot(exp(c_ellipse(1,:)), exp(c_ellipse(2,:)),'LineWidth',4);
 
-update_fig();
+% update_fig();
 
 end
