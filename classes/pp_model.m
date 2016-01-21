@@ -285,7 +285,12 @@
       end
       fprintf(['Done!\n']);
 
-%       obj = obj.calcGOF(); % goodness-of-fit
+      try
+       obj = obj.calcGOF(); % goodness-of-fit
+      catch
+        disp('Could not compute goodness-of-fit');
+      end
+       
     end
     
     function obj = calcGOF(obj, p)      
