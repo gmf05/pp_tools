@@ -7,7 +7,7 @@
 %     X % design (data) matrix
 %     y % response process
 %     CIF % conditional intensity function
-%     fit_method % irls, filt, or smooth
+%     fit_method % glmfit, filt, or smooth
 %     link % link function name, if using glmfit 
 %     stats % structure like the one returned by glmfit
 %     LL % log-likelihood
@@ -543,8 +543,8 @@
       Z = 2;
       N_covar_types = length(p.covariate_names);
       burn_in = p.get_burn_in();
-%       dtFactor = d.dt * 1e3; % scale to [[ms]] or sec?
-      dtFactor = d.dt; % scale to ms or [[sec]]?
+      dtFactor = d.dt * 1e3; % scale to [[ms]] or sec?
+%       dtFactor = d.dt; % scale to ms or [[sec]]?
       
       % NOTE: ASSUMES 'rate' is first covariate
       % and all other types ('self-hist', 'ensemble', etc)
@@ -555,7 +555,7 @@
       T0 = length(p.covariate_knots{1});
       ind = p.covariate_ind{1};
       switch obj.fit_method
-        case 'irls'
+        case 'glmfit'
           b1 = obj.b(ind);
           if DO_CONF_INT, W1 = obj.W(ind,ind); end;
         case {'filt','smooth'}
@@ -605,7 +605,7 @@
         subplot(N_covar_types,1,covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
-          case 'irls'
+          case 'glmfit'
             switch p.covariate_bases{covar_num}
               case 'spline'
                 if DO_CONF_INT
@@ -696,7 +696,9 @@
             end
             ylabel(['lag time ' lagunit]);
         end
-        xlim(round([p.covariate_knots{covar_num}(1),p.covariate_knots{covar_num}(end)*0.9]*dtFactor));
+        xmin = p.covariate_knots{covar_num}(1)*dtFactor;
+        xmax = max(p.covariate_knots{covar_num}(end)*0.9*dtFactor, xmin+1);
+        xlim([xmin, xmax]);
         title(p.covariate_names{covar_num});
       end
 
@@ -719,7 +721,7 @@
         subplot(N_covar_types,1,covar_num); hold on;
         ind = p.covariate_ind{covar_num};
         switch obj.fit_method
-          case 'irls'
+          case 'glmfit'
             switch p.covariate_bases{covar_num}
               case 'spline'
                 if DO_CONF_INT

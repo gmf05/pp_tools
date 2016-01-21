@@ -22,7 +22,7 @@ classdef pp_params
     covariate_bases % list of 'spline' or 'indicator' for each covar
     covariate_ind % lists of indices corresponding to each covar    
     response % channel being modeled
-    fit_method % 'glmfit', 'filt', or 'smooth'
+    fit_method % 'irls', 'filt', or 'smooth'
     link % link function for glmfit (default 'log')
     rs % how to rescale interspike intervals ('exp' default or 'identity')
     alpha % desired significance level for tests, etc. (default = 0.05)

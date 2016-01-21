@@ -140,7 +140,11 @@ classdef pp_data
     function obj = add_channels(obj,obj2)
       obj.dn = [obj.dn; obj2.dn];
       obj.N_channels = obj.N_channels+size(obj2.dn,1);
-      obj.labels = {obj.labels{:} obj2.labels{:}};
+      try
+        obj.labels = {obj.labels{:} obj2.labels{:}};
+      catch
+        0;
+      end
     end
     
     function plot(obj, plot_type, params)
