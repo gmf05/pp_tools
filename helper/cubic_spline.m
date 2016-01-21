@@ -54,16 +54,11 @@ function [tau, y, ylo, yhi] = cubic_spline(knots, b, s, W, Z, do_mask)
     
     % get confidence intervals, if directed
     if do_conf_int
-<<<<<<< HEAD:helper/cubic_spline.m
-        R = cholcov(W);        
-        dy = sum((X0*R').^2, 2);
-=======
         % The factorization below avoids forming the product X0*W*X0',
         % which is large, by breaking W into a product L'*L and taking
         % advantage of symmetry + the smaller matrix X0*L'
         R = cholcov(W); % W = R'*R, so FI = X0*W*X0' = (X0*R')*(X0*R')'
         dy = sum((X*R').^2,2); % using symmetric structure of F
->>>>>>> Updated plot_spline computation of confidence intervals:helper/plot_spline.m
         yhi = y + Z*sqrt(dy);
         ylo = y - Z*sqrt(dy);
         
