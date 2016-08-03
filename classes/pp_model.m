@@ -89,30 +89,29 @@
     % INPUTS:
     % d -- point process data object
     % p -- point process params object
-    %
-    %
+    % 
+    % 
       warning(''); % clear last warning 
-      fprintf(['\nFitting point process model...\n']);      
+      
+      if nargin<2
+        p = pp_params();
+        burn_in=0;
+      else
+        N_cov_types = length(p.covariate_names);
+        burn_in = p.get_burn_in();
+
+        % make design matrix
+        N_cov = p.covariate_ind{end}(end); % total # of covariates
+        fs_update_ind = p.covariate_ind{1}(end)+1:N_cov; % which covariates are dynamic?
+        obj.X = ones(d.T,N_cov);
+        if p.is_verbose, fprintf(['Building design matrix...\n']); end
+        obj = obj.makeXy(d,p);      
+        if p.is_verbose, fprintf(['Done!\n']); end
+      end
       obj.fit_method = p.fit_method;
       obj.link = p.link;
-
-      N_cov_types = length(p.covariate_names);
-      obj.y = d.dn(p.response,:)'; % response variable      
       
-      % make design matrix
-      N_cov = p.covariate_ind{end}(end); % total # of covariates
-      fs_update_ind = p.covariate_ind{1}(end)+1:N_cov; % which covariates are dynamic?
-      obj.X = ones(d.T,N_cov);
-      fprintf(['Building design matrix...\n']);
-      obj = obj.makeX(d,p);      
-      fprintf(['Done!\n']);
-      
-      % trim burn-in period
-      burn_in = p.get_burn_in();
-      obj.X = obj.X(burn_in+1:end,:);
-      obj.y = obj.y(burn_in+1:end);            
-      
-      fprintf(['Estimating parameters...']);
+      if p.is_verbose, fprintf(['Estimating parameters...']); end
 %       % MATLAB glmfit routine:
 %       [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','link',obj.link,'constant','off');
 
@@ -147,7 +146,7 @@
           end
           noise_mtx = noise_mtx(fs_update_ind,fs_update_ind);
           
-          fprintf(['\nFiltering backward...']);
+          if p.is_verbose, fprintf(['\nFiltering backward...']); end
           for t = 1:d.T-burn_in
             dL_dB = X_bwd(t,fs_update_ind);
             lt = exp(X_bwd(t,:)*b_bwd);
@@ -164,14 +163,14 @@
 %           b = b_bwd;
 %           b = rand(size(b));
           W = W_bwd;
-          fprintf(['Done!\n']);
+          if p.is_verbose, fprintf(['Done!\n']); end
           
           % set initial values          
           bs{1} = b;
           Ws{1} = W;
           count = 2;
           
-          fprintf(['\nFiltering forward...']);
+          if p.is_verbose, fprintf(['\nFiltering forward...']); end
           for t = 1:d.T-burn_in
             dL_dB = obj.X(t,fs_update_ind);
             lt = exp(obj.X(t,:)*b);
@@ -193,7 +192,7 @@
             end
             
           end
-          fprintf(['Done!\n']);
+          if p.is_verbose, fprintf(['Done!\n']); end
           
           obj.b = bs;
           obj.W = Ws;
@@ -219,12 +218,12 @@
           end
           noise_mtx = noise_mtx(fs_update_ind,fs_update_ind);
           
-          fprintf(['Filtering backward...']);
+          if p.is_verbose, fprintf(['Filtering backward...']); end
           for t = 1:d.T-burn_in
             dL_dB = X_bwd(t,fs_update_ind);
             lt = exp(X_bwd(t,:)*b_bwd);
             A = W_bwd(fs_update_ind,fs_update_ind)+noise_mtx;
-            U = dL_dB';
+            U = dL_dB'; 
             V = dL_dB;
             C0 = lt;
             C1 = (1/C0+V*A*U);
@@ -234,14 +233,14 @@
             b_bwd(fs_update_ind) = b_bwd(fs_update_ind) + dB;
           end
           b = b_bwd; W = W_bwd;
-          fprintf(['Done!\n']);
+          if p.is_verbose, fprintf(['Done!\n']); end
           
           % or, instead of filtering backward,
           % initialize using glmfit
 %           [b,dev,stats] = glmfit(obj.X,obj.y,'poisson','constant','off');
 %           W = stats.covb;
           
-          fprintf(['Filtering forward...']);
+          if p.is_verbose, fprintf(['Filtering forward...']); end
           for t = 1:d.T-burn_in
             dL_dB = obj.X(t,fs_update_ind);
             lt = exp(obj.X(t,:)*b);
@@ -258,9 +257,9 @@
             bs{t} = b;
             Ws{t} = W;
           end                              
-          fprintf(['Done!\n']);
+          if p.is_verbose, fprintf(['Done!\n']); end
           
-          fprintf(['Smoothing...']);
+          if p.is_verbose, (['Smoothing...']); end
           b = bs{end}; W = Ws{end};
           bs0{end} = b; Ws0{end} = W;
           count = NT - 1;
@@ -278,12 +277,12 @@
               count = count-1;
             end
           end
-          fprintf(['Done!\n']);
+          if p.is_verbose, fprintf(['Done!\n']); end
           
           obj.b = bs0;
           obj.W = Ws0;
       end
-      fprintf(['Done!\n']);
+      if p.is_verbose, fprintf(['Done!\n']); end
 
       try
        obj = obj.calcGOF(); % goodness-of-fit
@@ -344,7 +343,7 @@
       
     end
     
-    function obj = makeX(obj,d,p)
+    function obj = makeXy(obj,d,p)
       for i = 1:length(p.covariate_names)
         channels = p.covariate_channels{i};
         basis = p.covariate_bases{i};     
@@ -353,7 +352,8 @@
         Xi = obj.makeX_block(d, channels, basis, knots, p.s);
         obj.X(:,ind) = Xi; clear Xi;
       end
-%       obj.X = obj.X(p.get_burn_in()+1:end,:);
+      obj.X = obj.X(p.get_burn_in()+1:end,:);
+      obj.y = d.dn(p.response, p.get_burn_in()+1:end)';
     end
     
     function Xi = makeX_block(obj, data, channels, basis, knots, s)
@@ -430,7 +430,7 @@
             Xi = zeros(data.T, N);
             burn_in = knots(end);
             for n = 1:N
-              Xi(burn_in+1:end, n) =  d((burn_in+1:end)-knots(n))';
+              Xi(burn_in+1:end, n) =  d((burn_in+1-knots(n):end-knots(n)))';
             end
         end
       end
@@ -482,6 +482,8 @@
         Xw = X .* sqrtw(:,ones(1,p));
         [Q,R] = qr(Xw,0);
         b = R \ (Q'*zw);
+        %b(b<-20)=-20;
+        %b(b>20)=20;
               
         %-----
         % check convergence
@@ -497,7 +499,7 @@
         % 
         % stop if converged:
         if norm(b - b_old, inf) < eps
-          fprintf(['Converged in ' num2str(iter) ' steps. ']);
+          fprintf(['Converged in ' num2str(iter) ' steps.\n']);
           break;
         end
         %-----
@@ -576,7 +578,7 @@
             t_axis = t_axis*(d.t(end)-d.t(1)) + d.t(1); % convert to secs
             L = exp(Y')/d.dt; Llo = exp(Ylo')/d.dt; Lhi = exp(Yhi')/d.dt;
 %             plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
-            boundedline(t_axis,L,[Lhi-L; L-Llo],PLOT_COLOR);
+            boundedline(t_axis,L,[L-Llo; Lhi-L]',PLOT_COLOR);
           else
             [t_axis,Y] = cubic_spline(p.covariate_knots{1},obj.b(ind),p.s);
             t_axis = t_axis*(d.t(end)-d.t(1)); % convert to secs
@@ -595,7 +597,7 @@
             for t = 1:T0-1
 %               plot(t_axis,L,PLOT_COLOR,t_axis,Lhi,[PLOT_COLOR '--'],t_axis,Llo,[PLOT_COLOR '--']);
 %               boundedline([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],{'Color',PLOT_COLOR});
-              boundedline([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[(Lhi(t)-L(t))*ones(1,2); (L(t)-Llo(t))*ones(1,2)],PLOT_COLOR);
+              boundedline([t_axis(t),t_axis(t+1)],L(t)*ones(1,2),[L(t)-Llo(t) Lhi(t)-L(t)],PLOT_COLOR);
             end
           else
             for t = 1:T0-1              
@@ -621,7 +623,7 @@
                   lag_axis = lag_axis*dtFactor; % convert from bins to ms / sec
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
-                  boundedline(lag_axis,L,[Lhi-L; L-Llo]',PLOT_COLOR);
+                  boundedline(lag_axis,L,[L-Llo; Lhi-L]',PLOT_COLOR);
                 else
                   [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
 %                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -637,7 +639,7 @@
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
 %                   plot(lag_axis,L,PLOT_COLOR,lag_axis,Lhi,[PLOT_COLOR '--'],lag_axis,Llo,[PLOT_COLOR '--']);
-                  boundedline(lag_axis,L,[Lhi-L; L-Llo]',PLOT_COLOR);
+                  boundedline(lag_axis,L,[L-Llo; Lhi-L]',PLOT_COLOR);
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
@@ -736,7 +738,7 @@
                   [lag_axis,Y,Ylo,Yhi] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s,obj.W(ind,ind),Z);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  boundedline(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[L-Llo; Lhi-L],{'Color',PLOT_COLOR},1);
                 else
                   [lag_axis,Y] = cubic_spline(p.covariate_knots{covar_num},obj.b(ind),p.s);
                   lag_axis = lag_axis*d.dt*1e3; % convert from bins to ms
@@ -749,7 +751,7 @@
                   error('write more code!');
                   % assign Y, Ylo, Yhi based on covariance structure
                   L = exp(Y'); Llo = exp(Ylo'); Lhi = exp(Yhi');
-                  boundedline(lag_axis,L,[Lhi-L; L-Llo],{'Color',PLOT_COLOR},1);
+                  boundedline(lag_axis,L,[L-Llo; Lhi-L],{'Color',PLOT_COLOR},1);
                 else
                   plot(lag_axis,exp(obj.b(ind)'),PLOT_COLOR,'linewidth',2);                  
                 end
@@ -887,7 +889,7 @@
       else
         ks_stat = NaN;
         ks_ci = NaN;
-        fprintf('Error: Too few events in data for GoF analysis\n');
+        if p.is_verbose, fprintf('Error: Too few events in data for GoF analysis\n'); end
         return;
       end
 

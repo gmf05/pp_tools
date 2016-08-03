@@ -180,13 +180,13 @@ classdef pp_data
             plot(tmins,win_rate,PLOT_COLOR); hold on; grid on;
             
           end
-          xlabel('time [s]')
+          xlabel('Time [s]')
           ylabel('rate [Hz]')
           title({ttl; plot_type});
         case 'psth'
           plot(obj.t,sum(obj.dn,1),PLOT_COLOR);
-          xlabel('time [s]')
-          ylabel('no. channels')
+          xlabel('Time [s]')
+          ylabel('# Channels')
           title({ttl ; ' - no. channels active per dt'}); grid on;
         case 'heat'
           Ts = obj.t(1:dW_bins:end-win_bins);
@@ -199,8 +199,8 @@ classdef pp_data
             end
           end
           imagesc(Ts,1:obj.N_channels,win_rates);
-          xlabel('time [s]')
-          ylabel('channel')
+          xlabel('Time [s]')
+          ylabel('Channel')
           colorbar;
           title({ttl; 'firing rates'});
         case 'isi'
@@ -210,7 +210,7 @@ classdef pp_data
           [isi_hist,isi_x] = hist(isi_list,isi_axis);
           bar(isi_x,isi_hist);
           xlabel('ISI [ms]');
-          ylabel('count');
+          ylabel('Count');
         case 'isi-heat'
           if obj.dt>5e-4
             isi_axis = 1:10:ceil(1/obj.dt);
@@ -233,7 +233,7 @@ classdef pp_data
             count = count+dW_bins;
           end
           imagesc(tmins,round(isi_axis*obj.dt*1e3),isi_hist);
-          xlabel('time [s]');
+          xlabel('Time [s]');
           ylabel('ISI [ms]');
           title('inter-spike-interval (ISI) histogram');
           colorbar();
@@ -244,9 +244,11 @@ classdef pp_data
             ind = find(obj.dn(i,:));
             plot(obj.t(ind), i*ones(1,length(ind)), [PLOT_COLOR '.']);
           end
-          xlabel('time [s]');
-          ylabel('channel');
-          title([ttl ' raster plot']);
+          ylim([0.5, obj.N_channels+0.5]);
+          xlim([obj.t(1) obj.t(end)]);
+          xlabel('Time [s]');
+          ylabel('Channel');
+          title([ttl ' Raster Plot']);
           axis ij;
         case 'raster2'
           gca(); hold on;
@@ -258,10 +260,11 @@ classdef pp_data
               plot([obj.t(ind(k)) obj.t(ind(k))], [i-0.5 i+0.5], 'Color', PLOT_COLOR);
             end
           end
-
-          xlabel('time [s]');
-          ylabel('channel');
-          title([ttl ' raster plot']);
+          ylim([0.5, obj.N_channels+0.5]);
+          xlim([obj.t(1) obj.t(end)]);
+          xlabel('Time [s]');
+          ylabel('Channel');
+          title([ttl ' Raster Plot']);
           axis ij;
           
           
@@ -286,9 +289,9 @@ classdef pp_data
               hold on;
             end
           end
-          xlabel('time [s]');
-          ylabel('channel');
-          title([ttl ' raster plot']);
+          xlabel('Time [s]');
+          ylabel('Channel');
+          title([ttl ' Raster Plot']);
           axis ij
       end
     end

@@ -1,5 +1,6 @@
 function [tau, y, ylo, yhi] = cubic_spline(knots, b, s, W, Z, do_mask)
 %   plot_spline.m
+%   y = cubic_spline(knots, b)
 %   [tau, y, y_lo, y_hi] = cubic_spline(knots, b, s, W, Z)
 %   knots: partition of the covariate axis
 %   b: model parameters
@@ -67,5 +68,5 @@ function [tau, y, ylo, yhi] = cubic_spline(knots, b, s, W, Z, do_mask)
             y(ind) = 0;
         end
     end
-
+  if nargout<2, tau = y; end 
 end
