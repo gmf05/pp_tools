@@ -30,7 +30,8 @@ classdef pp_params
     s % tension parameter for spline interpolation (default s = 0.5)
     window % (default window = [1 0.2])
     downsample_est % factor for downsampling estimates (default 1)
-    
+    is_verbose % print outputs
+    plot_color
   end
   
   methods
@@ -64,6 +65,8 @@ classdef pp_params
       obj.s = 0.5;
       obj.window = [1 0.2];
       obj.downsample_est = 1;
+      obj.is_verbose = false;
+      obj.plot_color = 'b';
     end
     
     function obj = add_covar(obj, name, channels, knots, basis)
